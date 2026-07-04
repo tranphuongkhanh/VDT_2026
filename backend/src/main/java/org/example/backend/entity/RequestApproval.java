@@ -4,9 +4,12 @@ import jakarta.persistence.*;
 import lombok.*;
 import java.time.LocalDateTime;
 
+import org.example.backend.enums.ApprovalAction;
+
 @Entity
 @Table(name = "request_approvals", uniqueConstraints = {
-    @UniqueConstraint(name = "uq_request_step_approver", columnNames = {"request_id", "workflow_step_id", "approver_id"})
+        @UniqueConstraint(name = "uq_request_step_approver", columnNames = { "request_id", "workflow_step_id",
+                "approver_id" })
 })
 @Getter
 @Setter
@@ -31,8 +34,10 @@ public class RequestApproval {
     @JoinColumn(name = "approver_id", nullable = false)
     private User approver;
 
+    // Hành động: APPROVE, REJECT, RETURN, DELEGATE
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
-    private String action;
+    private ApprovalAction action;
 
     @Column(columnDefinition = "TEXT")
     private String comment;
@@ -49,10 +54,12 @@ public class RequestApproval {
     @JoinColumn(name = "delegated_from")
     private User delegatedFrom;
 
+    // ID bản ghi delegation đã kích hoạt việc chuyển này
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "delegation_id")
     private Delegation delegation;
 
+    // IP của người thực hiện hành động
     @Column(name = "ip_address", length = 45)
     private String ipAddress;
 }

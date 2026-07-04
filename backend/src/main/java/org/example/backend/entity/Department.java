@@ -27,10 +27,12 @@ public class Department {
     @JoinColumn(name = "parent_id")
     private Department parent;
 
+    // Cấp độ trong cây: 0 = cấp gốc, 1 = phòng ban, 2 = tổ/nhóm
     @Column(nullable = false)
     @Builder.Default
     private Integer level = 0;
 
+    // Chuỗi đường dẫn từ gốc đến node này
     @Column(length = 1000)
     private String path;
 

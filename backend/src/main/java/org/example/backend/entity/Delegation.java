@@ -3,6 +3,8 @@ package org.example.backend.entity;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import lombok.*;
+
+import org.example.backend.enums.DelegationScope;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import java.time.LocalDate;
@@ -37,9 +39,10 @@ public class Delegation {
     @Column(name = "to_date", nullable = false)
     private LocalDate toDate;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20)
     @Builder.Default
-    private String scope = "ALL";
+    private DelegationScope scope = DelegationScope.ALL;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "request_type_ids")

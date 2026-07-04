@@ -3,6 +3,9 @@ package org.example.backend.entity;
 import com.fasterxml.jackson.databind.JsonNode;
 import jakarta.persistence.*;
 import lombok.*;
+
+import org.example.backend.enums.RequestPriority;
+import org.example.backend.enums.RequestStatus;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 import java.time.LocalDate;
@@ -21,6 +24,8 @@ public class Request {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // Số yêu cầu sinh tự động theo format: {TYPE}-{YEAR}-{SEQ} (VD:
+    // LEAVE-2025-00142)
     @Column(name = "request_no", nullable = false, unique = true, length = 50)
     private String requestNo;
 
@@ -44,9 +49,10 @@ public class Request {
     @Builder.Default
     private Integer currentStep = 0;
 
+    @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 30)
     @Builder.Default
-    private String status = "DRAFT";
+    private RequestStatus status = RequestStatus.DRAFT;
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "form_data", nullable = false)
@@ -55,22 +61,29 @@ public class Request {
     @Column(nullable = false, length = 500)
     private String title;
 
+    // Mức độ ưu tiên: LOW, NORMAL, HIGH, URGENT
+    @Enumerated(EnumType.STRING)
     @Column(length = 20)
     @Builder.Default
-    private String priority = "NORMAL";
+    private RequestPriority priority = RequestPriority.NORMAL;
 
+    // Thời điểm nộp chính thức (chuyển từ DRAFT sang SUBMITTED)
     @Column(name = "submitted_at")
     private LocalDateTime submittedAt;
 
+    // Thời điểm hoàn thành (APPROVED hoặc REJECTED)
     @Column(name = "completed_at")
     private LocalDateTime completedAt;
 
+    // Ngày cần xử lý xong
     @Column(name = "due_date")
     private LocalDate dueDate;
 
+    // Ghi chú bổ sung của người tạo khi submit
     @Column(columnDefinition = "TEXT")
     private String note;
 
+    // Thời điểm tạo bản nháp (DRAFT)
     @Column(name = "created_at", nullable = false, updatable = false)
     @Builder.Default
     private LocalDateTime createdAt = LocalDateTime.now();
