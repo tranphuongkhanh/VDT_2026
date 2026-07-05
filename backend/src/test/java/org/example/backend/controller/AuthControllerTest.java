@@ -65,6 +65,11 @@ class AuthControllerTest {
                 passwordResetTokenRepository.deleteAll();
                 userRepository.deleteAll();
                 roleRepository.deleteAll();
+                userRoleRepository.flush();
+                refreshTokenRepository.flush();
+                passwordResetTokenRepository.flush();
+                userRepository.flush();
+                roleRepository.flush();
 
                 // Create test role
                 testRole = Role.builder()
