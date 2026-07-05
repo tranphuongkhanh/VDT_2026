@@ -252,3 +252,30 @@ CREATE INDEX idx_steps_workflow_order ON workflow_steps(workflow_id, step_order)
 -- Partial Indexes
 CREATE UNIQUE INDEX uq_active_workflow ON workflows (request_type_id) WHERE is_active = TRUE;
 CREATE UNIQUE INDEX uq_active_form ON forms (request_type_id) WHERE is_active = TRUE;
+
+-- =================================================================================
+-- NHÓM 5: AUTHENTICATION & SECURITY TOKENS
+-- =================================================================================
+
+CREATE TABLE refresh_tokens (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    token VARCHAR(500) UNIQUE NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    revoked_at TIMESTAMP NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE TABLE password_reset_tokens (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    token VARCHAR(255) UNIQUE NOT NULL,
+    expires_at TIMESTAMP NOT NULL,
+    used_at TIMESTAMP NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id)
+);
+
+CREATE INDEX idx_refresh_tokens_token ON refresh_tokens(token);
+CREATE INDEX idx_password_reset_tokens_token ON password_reset_tokens(token);
