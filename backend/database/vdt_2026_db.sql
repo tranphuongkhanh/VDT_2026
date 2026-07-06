@@ -64,13 +64,21 @@ CREATE TABLE user_roles (
 -- NHÓM 2: CẤU HÌNH LOẠI YÊU CẦU & BIỂU MẪU
 -- =================================================================================
 
+CREATE TABLE categories (
+    id          BIGSERIAL       PRIMARY KEY,
+    name        VARCHAR(255)    NOT NULL,
+    description TEXT,
+    is_active   BOOLEAN         NOT NULL DEFAULT TRUE,
+    created_at  TIMESTAMPTZ     NOT NULL DEFAULT NOW()
+);
+
 CREATE TABLE request_types (
     id BIGSERIAL PRIMARY KEY,
     code VARCHAR(50) UNIQUE NOT NULL,
     name VARCHAR(255) NOT NULL,
     description TEXT NULL,
     icon VARCHAR(100) NULL,
-    category VARCHAR(50) NULL,
+    category_id BIGINT REFERENCES categories(id) ON DELETE RESTRICT,
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     sort_order INT DEFAULT 0,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,

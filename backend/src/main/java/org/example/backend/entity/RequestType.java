@@ -33,9 +33,9 @@ public class RequestType {
     @Column(length = 100)
     private String icon;
 
-    // Nhóm loại yêu cầu (VD: "Nhân sự", "Mua sắm", "Công tác", "Tài chính")
-    @Column(length = 50)
-    private String category;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
 
     // Loại yêu cầu không còn dùng được ẩn đi nhưng dữ liệu cũ vẫn truy cập được
     @Column(name = "is_active", nullable = false)
