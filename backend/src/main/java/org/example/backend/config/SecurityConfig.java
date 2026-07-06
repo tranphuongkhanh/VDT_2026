@@ -40,6 +40,10 @@ public class SecurityConfig {
                         .requestMatchers("/api/auth/login", "/api/auth/refresh", "/api/auth/forgot-password",
                                 "/api/auth/reset-password")
                         .permitAll()
+                        .requestMatchers("/v3/api-docs/**",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html")
+                        .permitAll()
                         .anyRequest().authenticated())
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
