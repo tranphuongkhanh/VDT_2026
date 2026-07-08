@@ -124,13 +124,47 @@ CREATE TABLE workflow_steps (
     approver_type VARCHAR(30) NOT NULL,
     approver_ref_id BIGINT NULL,
     action_on_approve VARCHAR(100) NOT NULL,
-    action_on_reject VARCHAR(100) NOT NULL,
-    is_parallel BOOLEAN DEFAULT FALSE,
-    parallel_threshold INT DEFAULT 1 CHECK(parallel_threshold >= 1),
+    -- Thêm cột mới chỉ có ý nghĩa khi approver_type = ROLE
+    role_approval_mode VARCHAR(20),
+    -- ANY_ONE   : ai duyệt trước thì xong (default với ROLE)
+    -- THRESHOLD : đủ N người thì xong
+    -- ALL       : tất cả thành viên phải duyệt
+    role_approval_threshold INT,
+    -- Chỉ dùng khi role_approval_mode = THRESHOLD
+    -- NULL khi mode = ANY_ONE hoặc ALL
     time_limit_hours INT NULL,
     notify_on_enter BOOLEAN DEFAULT TRUE,
     description TEXT NULL,
-    FOREIGN KEY (workflow_id) REFERENCES workflows(id)
+    FOREIGN KEY (workflow_id) REFERENCES workflows(id),
+    
+    -- Constraint: chỉ ROLE mới được set role_approval_mode
+    ADD CONSTRAINT chk_role_mode_only_for_role CHECK (
+        (approver_type = 'ROLE' AND role_approval_mode IS NOT NULL)
+        OR
+        (approver_type != 'ROLE' AND role_approval_mode IS NULL)
+    ),
+
+    -- Constraint: threshold chỉ có khi mode = THRESHOLD
+    ADD CONSTRAINT chk_threshold_only_for_threshold_mode CHECK (
+        (role_approval_mode = 'THRESHOLD' AND role_approval_threshold IS NOT NULL AND role_approval_threshold >= 1)
+        OR
+        (role_approval_mode != 'THRESHOLD' AND role_approval_threshold IS NULL)
+        OR
+        role_approval_mode IS NULL
+    ),
+
+    -- Constraint: role_approval_mode phải là giá trị hợp lệ
+    ADD CONSTRAINT chk_role_approval_mode CHECK (
+        role_approval_mode IN ('ANY_ONE', 'THRESHOLD', 'ALL') OR role_approval_mode IS NULL
+    ),
+
+	ADD CONSTRAINT chk_approver_ref CHECK (
+        -- USER và ROLE phải có ref_id
+        (approver_type IN ('USER','ROLE') AND approver_ref_id IS NOT NULL)
+        OR
+        -- DEPARTMENT_HEAD và DIRECT_MANAGER không cần ref_id
+        (approver_type IN ('DEPARTMENT_HEAD','DIRECT_MANAGER', 'SPECIFIC_DEPARTMENT_HEAD') AND approver_ref_id IS NULL)
+    )
 );
 
 -- =================================================================================
