@@ -50,6 +50,9 @@ class AuthControllerTest {
         private PasswordResetTokenRepository passwordResetTokenRepository;
 
         @Autowired
+        private DepartmentRepository departmentRepository;
+
+        @Autowired
         private PasswordEncoder passwordEncoder;
 
         @Autowired
@@ -64,11 +67,13 @@ class AuthControllerTest {
                 refreshTokenRepository.deleteAll();
                 passwordResetTokenRepository.deleteAll();
                 userRepository.deleteAll();
+                departmentRepository.deleteAll();
                 roleRepository.deleteAll();
                 userRoleRepository.flush();
                 refreshTokenRepository.flush();
                 passwordResetTokenRepository.flush();
                 userRepository.flush();
+                departmentRepository.flush();
                 roleRepository.flush();
 
                 // Create test role

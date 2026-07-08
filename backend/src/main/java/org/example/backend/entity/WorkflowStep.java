@@ -1,8 +1,8 @@
 package org.example.backend.entity;
 
 import org.example.backend.enums.ActionOnApprove;
-import org.example.backend.enums.ActionOnReject;
 import org.example.backend.enums.ApproverType;
+import org.example.backend.enums.RoleApprovalMode;
 
 import jakarta.persistence.*;
 import lombok.*;
@@ -45,21 +45,12 @@ public class WorkflowStep {
     @Column(name = "action_on_approve", nullable = false, length = 100)
     private ActionOnApprove actionOnApprove;
 
-    // Hành động khi từ chối: REJECT (kết thúc từ chối), BACK_TO_STEP:n (trả về bước
-    // trước), BACK_TO_REQUESTER (trả người tạo)
     @Enumerated(EnumType.STRING)
-    @Column(name = "action_on_reject", nullable = false, length = 100)
-    private ActionOnReject actionOnReject;
+    @Column(name = "role_approval_mode", length = 20)
+    private RoleApprovalMode roleApprovalMode;
 
-    // Nếu true, nhiều người có thể duyệt cùng lúc
-    @Column(name = "is_parallel")
-    @Builder.Default
-    private Boolean isParallel = false;
-
-    // Số lượng người cần duyệt (nếu isParallel=true)
-    @Column(name = "parallel_threshold")
-    @Builder.Default
-    private Integer parallelThreshold = 1;
+    @Column(name = "role_approval_threshold")
+    private Integer roleApprovalThreshold;
 
     // Giới hạn thời gian xử lý (giờ). Quá hạn sẽ gửi cảnh báo hoặc escalate theo
     // cấu hình

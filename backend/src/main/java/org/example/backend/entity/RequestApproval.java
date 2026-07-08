@@ -46,19 +46,6 @@ public class RequestApproval {
     @Builder.Default
     private LocalDateTime actedAt = LocalDateTime.now();
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "delegate_to")
-    private User delegateTo;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "delegated_from")
-    private User delegatedFrom;
-
-    // ID bản ghi delegation đã kích hoạt việc chuyển này
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "delegation_id")
-    private Delegation delegation;
-
     // IP của người thực hiện hành động
     @Column(name = "ip_address", length = 45)
     private String ipAddress;
