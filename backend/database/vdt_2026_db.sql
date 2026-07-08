@@ -160,10 +160,10 @@ CREATE TABLE workflow_steps (
 
 	ADD CONSTRAINT chk_approver_ref CHECK (
         -- USER và ROLE phải có ref_id
-        (approver_type IN ('USER','ROLE') AND approver_ref_id IS NOT NULL)
+        (approver_type IN ('USER','ROLE', 'SPECIFIC_DEPARTMENT_HEAD') AND approver_ref_id IS NOT NULL)
         OR
         -- DEPARTMENT_HEAD và DIRECT_MANAGER không cần ref_id
-        (approver_type IN ('DEPARTMENT_HEAD','DIRECT_MANAGER', 'SPECIFIC_DEPARTMENT_HEAD') AND approver_ref_id IS NULL)
+        (approver_type IN ('DEPARTMENT_HEAD','DIRECT_MANAGER') AND approver_ref_id IS NULL)
     )
 );
 
@@ -195,23 +195,6 @@ CREATE TABLE requests (
     FOREIGN KEY (form_id) REFERENCES forms(id)
 );
 
-CREATE TABLE delegations (
-    id BIGSERIAL PRIMARY KEY,
-    delegator_id BIGINT NOT NULL,
-    delegate_to_id BIGINT NOT NULL,
-    from_date DATE NOT NULL,
-    to_date DATE NOT NULL,
-    scope VARCHAR(20) NOT NULL DEFAULT 'ALL',
-    request_type_ids JSONB NULL,
-    reason TEXT NULL,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT chk_date CHECK (to_date >= from_date),
-    CONSTRAINT uq_active_delegation UNIQUE (delegator_id, is_active),
-    FOREIGN KEY (delegator_id) REFERENCES users(id),
-    FOREIGN KEY (delegate_to_id) REFERENCES users(id)
-);
-
 CREATE TABLE request_approvals (
     id BIGSERIAL PRIMARY KEY,
     request_id BIGINT NOT NULL,
@@ -220,16 +203,10 @@ CREATE TABLE request_approvals (
     action VARCHAR(30) NOT NULL,
     comment TEXT NULL,
     acted_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    delegate_to BIGINT NULL,
-    delegated_from BIGINT NULL,
-    delegation_id BIGINT NULL,
     ip_address VARCHAR(45) NULL,
     FOREIGN KEY (request_id) REFERENCES requests(id),
     FOREIGN KEY (workflow_step_id) REFERENCES workflow_steps(id),
     FOREIGN KEY (approver_id) REFERENCES users(id),
-    FOREIGN KEY (delegate_to) REFERENCES users(id),
-    FOREIGN KEY (delegated_from) REFERENCES users(id),
-    FOREIGN KEY (delegation_id) REFERENCES delegations(id),
     CONSTRAINT uq_request_step_approver UNIQUE(request_id, workflow_step_id, approver_id)
 );
 

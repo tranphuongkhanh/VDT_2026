@@ -5,5 +5,4 @@ public enum ApprovalAction {
     APPROVE, // duyệt
     REJECT, // từ chối
     RETURN, // trả lại
-    DELEGATE // ủy quyền
 }
