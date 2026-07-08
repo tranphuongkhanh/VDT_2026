@@ -20,3 +20,9 @@ app:
     secret: ${JWT_SECRET}
     expiration-ms: 900000 # 15 minutes (15 * 60 * 1000)
     refresh-expiration-ms: 604800000 # 7 days (7 * 24 * 60 * 60 * 1000)
+
+minio:
+  url: ${MINIO_URL:http://localhost:9000}
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin}
+  bucket: ${MINIO_BUCKET:vdt-2026}
