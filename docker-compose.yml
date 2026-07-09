@@ -1,0 +1,16 @@
+services:
+  minio:
+    image: minio/minio:latest
+    container_name: vdt_minio
+    ports:
+      - "9000:9000" # Port dùng cho API (Spring Boot gọi vào đây)
+      - "9001:9001" # Port dùng cho Web Console (Giao diện quản lý)
+    environment:
+      MINIO_ROOT_USER: minioadmin      # Đây chính là Access Key
+      MINIO_ROOT_PASSWORD: minioadmin  # Đây chính là Secret Key
+    volumes:
+      - minio_data:/data # Lưu trữ dữ liệu vật lý (không bị mất khi tắt container)
+    command: server /data --console-address ":9001"
+
+volumes:
+  minio_data:
