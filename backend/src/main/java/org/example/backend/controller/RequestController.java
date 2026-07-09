@@ -122,7 +122,6 @@ public class RequestController {
      * Danh sách yêu cầu cần tôi phê duyệt
      */
     @GetMapping("/pending-my-approval")
-    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN', 'FINANCE', 'HR')")
     public ResponseEntity<List<PendingApprovalResponse>> getPendingMyApproval(
             @AuthenticationPrincipal UserDetails userDetails) {
         return ResponseEntity.ok(requestService.getPendingMyApproval(userDetails.getUsername()));
@@ -200,10 +199,10 @@ public class RequestController {
     // -------------------------------------------------------------------------
 
     /**
-     * GET /api/requests/all — Danh sách toàn bộ yêu cầu (ADMIN, HR)
+     * GET /api/requests/all — Danh sách toàn bộ yêu cầu (ADMIN)
      */
     @GetMapping("/all")
-    @PreAuthorize("hasAnyRole('ADMIN', 'HR')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<RequestResponse>> getAllRequests(
             @RequestParam(required = false) RequestStatus status,
             @RequestParam(required = false) Long requestTypeId,

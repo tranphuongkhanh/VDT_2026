@@ -28,7 +28,7 @@ public class ReportController {
     private final ReportService reportService;
 
     @GetMapping("/requests")
-    @PreAuthorize("hasAnyRole('MANAGER', 'ADMIN', 'HR', 'FINANCE')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<RequestResponse>> getRequestsReport(
             @RequestParam(required = false) RequestStatus status,
             @RequestParam(required = false) Long requestTypeId,
@@ -42,7 +42,7 @@ public class ReportController {
     }
 
     @GetMapping("/audit-log")
-    @PreAuthorize("hasAnyRole('ADMIN')")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<RequestLogResponse>> getAuditLogReport(
             @RequestParam(required = false) Long requestId,
             @RequestParam(required = false) Long actorId,
