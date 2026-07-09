@@ -76,4 +76,22 @@ public interface RequestRepository extends JpaRepository<Request, Long> {
             @Param("fromDate") LocalDateTime fromDate,
             @Param("toDate") LocalDateTime toDate,
             Pageable pageable);
+
+    // Dashboard: Count total requests by a user
+    long countByRequesterId(Long requesterId);
+
+    // Dashboard: Count requests by user and status
+    long countByRequesterIdAndStatus(Long requesterId, RequestStatus status);
+
+    // Dashboard: Count requests by status
+    @Query("SELECT r.status, COUNT(r) FROM Request r GROUP BY r.status")
+    List<Object[]> countRequestsByStatus();
+
+    // Dashboard: Count requests by type
+    @Query("SELECT r.requestType.name, COUNT(r) FROM Request r GROUP BY r.requestType.name")
+    List<Object[]> countRequestsByType();
+
+    // Dashboard: Count requests by department
+    @Query("SELECT COALESCE(d.name, 'No Department'), COUNT(r) FROM Request r LEFT JOIN r.requester.department d GROUP BY d.name")
+    List<Object[]> countRequestsByDepartment();
 }
