@@ -1,0 +1,8 @@
+node_modules
+dist
+.git
+.gitignore
+.idea
+.vscode
+.oxlintrc.json
+README.md
