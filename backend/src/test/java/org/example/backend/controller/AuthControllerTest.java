@@ -18,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
+import org.example.backend.TestDatabaseCleanup;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -33,6 +34,9 @@ class AuthControllerTest {
 
         @Autowired
         private MockMvc mockMvc;
+
+        @Autowired
+        private TestDatabaseCleanup testDatabaseCleanup;
 
         @Autowired
         private UserRepository userRepository;
@@ -63,18 +67,7 @@ class AuthControllerTest {
 
         @BeforeEach
         void setUp() {
-                userRoleRepository.deleteAll();
-                refreshTokenRepository.deleteAll();
-                passwordResetTokenRepository.deleteAll();
-                userRepository.deleteAll();
-                departmentRepository.deleteAll();
-                roleRepository.deleteAll();
-                userRoleRepository.flush();
-                refreshTokenRepository.flush();
-                passwordResetTokenRepository.flush();
-                userRepository.flush();
-                departmentRepository.flush();
-                roleRepository.flush();
+                testDatabaseCleanup.clearDatabase();
 
                 // Create test role
                 testRole = Role.builder()

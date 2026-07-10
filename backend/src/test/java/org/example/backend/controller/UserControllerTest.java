@@ -14,7 +14,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.example.backend.TestDatabaseCleanup;
 import java.time.LocalDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -29,6 +29,9 @@ class UserControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
+
+    @Autowired
+    private TestDatabaseCleanup testDatabaseCleanup;
 
     @Autowired
     private UserRepository userRepository;
@@ -68,21 +71,8 @@ class UserControllerTest {
 
     @BeforeEach
     void setUp() {
-        // Clear db
-        userRoleRepository.deleteAll();
-        refreshTokenRepository.deleteAll();
-        passwordResetTokenRepository.deleteAll();
-        userRepository.deleteAll();
-        departmentRepository.deleteAll();
-        roleRepository.deleteAll();
-
-        // Flush deletes
-        userRoleRepository.flush();
-        refreshTokenRepository.flush();
-        passwordResetTokenRepository.flush();
-        userRepository.flush();
-        departmentRepository.flush();
-        roleRepository.flush();
+        // Clear db using helper
+        testDatabaseCleanup.clearDatabase();
 
         // Create roles
         adminRole = Role.builder().code("ADMIN").name("Administrator").isSystem(true).build();

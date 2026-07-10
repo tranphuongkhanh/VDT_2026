@@ -138,14 +138,14 @@ CREATE TABLE workflow_steps (
     FOREIGN KEY (workflow_id) REFERENCES workflows(id),
     
     -- Constraint: chỉ ROLE mới được set role_approval_mode
-    ADD CONSTRAINT chk_role_mode_only_for_role CHECK (
+    CONSTRAINT chk_role_mode_only_for_role CHECK (
         (approver_type = 'ROLE' AND role_approval_mode IS NOT NULL)
         OR
         (approver_type != 'ROLE' AND role_approval_mode IS NULL)
     ),
 
     -- Constraint: threshold chỉ có khi mode = THRESHOLD
-    ADD CONSTRAINT chk_threshold_only_for_threshold_mode CHECK (
+    CONSTRAINT chk_threshold_only_for_threshold_mode CHECK (
         (role_approval_mode = 'THRESHOLD' AND role_approval_threshold IS NOT NULL AND role_approval_threshold >= 1)
         OR
         (role_approval_mode != 'THRESHOLD' AND role_approval_threshold IS NULL)
@@ -154,11 +154,11 @@ CREATE TABLE workflow_steps (
     ),
 
     -- Constraint: role_approval_mode phải là giá trị hợp lệ
-    ADD CONSTRAINT chk_role_approval_mode CHECK (
+    CONSTRAINT chk_role_approval_mode CHECK (
         role_approval_mode IN ('ANY_ONE', 'THRESHOLD', 'ALL') OR role_approval_mode IS NULL
     ),
 
-	ADD CONSTRAINT chk_approver_ref CHECK (
+	CONSTRAINT chk_approver_ref CHECK (
         -- USER và ROLE phải có ref_id
         (approver_type IN ('USER','ROLE', 'SPECIFIC_DEPARTMENT_HEAD') AND approver_ref_id IS NOT NULL)
         OR
