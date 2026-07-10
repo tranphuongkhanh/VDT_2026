@@ -125,7 +125,7 @@ export default function RequestTypesPage() {
   const handleSaveForm = async (e) => {
     e.preventDefault();
     if (!formName) return toast('Vui lòng nhập tên form', 'warning');
-    
+
     if (formFields.length === 0) {
       return toast('Vui lòng thêm ít nhất một trường cho biểu mẫu', 'warning');
     }
@@ -134,7 +134,7 @@ export default function RequestTypesPage() {
       if (!field.name || !field.label) {
         return toast('Vui lòng điền đầy đủ Tên hiển thị và Mã trường', 'warning');
       }
-      if (field.type === 'select' && !field.options) {
+      if (['select', 'radio', 'multiselect'].includes(field.type) && !field.options) {
         return toast(`Vui lòng nhập tùy chọn cho trường "${field.label}"`, 'warning');
       }
     }
@@ -142,7 +142,7 @@ export default function RequestTypesPage() {
     const parsedSchema = {
       fields: formFields.map(({ id, options, ...rest }) => ({
         ...rest,
-        ...(rest.type === 'select' ? { options: options.split(',').map(o => o.trim()).filter(Boolean) } : {})
+        ...((['select', 'radio', 'checkbox', 'multiselect'].includes(rest.type) && options) ? { options: options.split(',').map(o => o.trim()).filter(Boolean) } : {})
       }))
     };
 
@@ -268,9 +268,51 @@ export default function RequestTypesPage() {
                     <span className="text-[10px] font-bold text-slate-400">Phiên bản {activeForm.version}</span>
                   </div>
                   <p className="text-sm font-semibold text-white mb-2">{activeForm.name}</p>
-                  <pre className="text-[10px] text-slate-300 bg-slate-950 p-2 rounded-lg overflow-x-auto border border-slate-800">
-                    {JSON.stringify(activeForm.schemaData, null, 2)}
-                  </pre>
+                  <div className="bg-slate-900 border border-slate-700/50 p-4 rounded-xl space-y-4 mt-3">
+                    {activeForm.schemaData?.fields?.map((field, idx) => (
+                      <div key={idx} className="space-y-1.5">
+                        <label className="text-xs font-semibold text-slate-300 flex items-center gap-1">
+                          {field.label} {field.required && <span className="text-rose-500">*</span>}
+                        </label>
+                        {field.type === 'textarea' ? (
+                          <textarea className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-400" disabled placeholder="Nhập văn bản..." />
+                        ) : field.type === 'select' || field.type === 'multiselect' ? (
+                          <select className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-500" disabled>
+                            <option>Chọn một tùy chọn</option>
+                            {field.options?.map((opt, i) => <option key={i}>{opt}</option>)}
+                          </select>
+                        ) : field.type === 'radio' ? (
+                          <div className="space-y-1 mt-2">
+                            {field.options?.map((opt, i) => (
+                              <label key={i} className="flex items-center gap-2 text-xs text-slate-400">
+                                <input type="radio" disabled className="bg-slate-800 border-slate-700" /> {opt}
+                              </label>
+                            ))}
+                          </div>
+                        ) : field.type === 'checkbox' ? (
+                          field.options && field.options.length > 0 ? (
+                            <div className="space-y-1 mt-2">
+                              {field.options.map((opt, i) => (
+                                <label key={i} className="flex items-center gap-2 text-xs text-slate-400">
+                                  <input type="checkbox" disabled className="bg-slate-800 border-slate-700 rounded" /> {opt}
+                                </label>
+                              ))}
+                            </div>
+                          ) : (
+                            <label className="flex items-center gap-2 text-xs text-slate-400 mt-2">
+                              <input type="checkbox" disabled className="bg-slate-800 border-slate-700 rounded" /> Chọn
+                            </label>
+                          )
+                        ) : field.type === 'file' ? (
+                          <div className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-500 border-dashed text-center">
+                            Chọn tập tin đính kèm
+                          </div>
+                        ) : (
+                          <input type={field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : field.type === 'datetime' ? 'datetime-local' : field.type === 'time' ? 'time' : 'text'} className="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg text-xs text-slate-500" disabled placeholder={field.type === 'date' || field.type === 'datetime' || field.type === 'time' ? '' : 'Nhập nội dung...'} />
+                        )}
+                      </div>
+                    ))}
+                  </div>
                   <p className="text-[10px] text-slate-500 mt-2">Cập nhật: {formatDate(activeForm.createdAt)}</p>
                 </div>
               </div>
@@ -351,7 +393,7 @@ export default function RequestTypesPage() {
                 Thêm trường
               </Button>
             </div>
-            
+
             <div className="space-y-3 max-h-[40vh] overflow-y-auto pr-2 custom-scrollbar">
               {formFields.length === 0 ? (
                 <div className="text-center py-8 bg-slate-800/30 border border-slate-700/50 border-dashed rounded-xl">
@@ -380,7 +422,13 @@ export default function RequestTypesPage() {
                           <option value="textarea">Văn bản dài (Textarea)</option>
                           <option value="number">Số (Number)</option>
                           <option value="date">Ngày tháng (Date)</option>
+                          <option value="datetime">Ngày & Giờ (DateTime)</option>
+                          <option value="time">Giờ (Time)</option>
+                          <option value="radio">Chọn 1 (Radio)</option>
+                          <option value="checkbox">Hộp kiểm (Checkbox)</option>
+                          <option value="multiselect">Chọn nhiều (Multi-select)</option>
                           <option value="select">Danh sách chọn (Select)</option>
+                          <option value="file">Tập tin đính kèm (File)</option>
                         </select>
                       </div>
                       <div className="flex items-center space-x-2 pt-6">
@@ -390,7 +438,7 @@ export default function RequestTypesPage() {
                         </label>
                       </div>
                     </div>
-                    {field.type === 'select' && (
+                    {['select', 'radio', 'checkbox', 'multiselect'].includes(field.type) && (
                       <div className="space-y-1.5 pt-3 border-t border-slate-700/50 mt-3">
                         <label className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Các tùy chọn (Options - cách nhau bởi dấu phẩy) *</label>
                         <input value={field.options} onChange={e => updateField(field.id, 'options', e.target.value)} placeholder="VD: Tùy chọn 1, Tùy chọn 2" className="w-full px-3 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-white focus:outline-none focus:border-indigo-500" />
