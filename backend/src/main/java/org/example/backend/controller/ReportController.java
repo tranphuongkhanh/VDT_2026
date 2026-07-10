@@ -44,10 +44,10 @@ public class ReportController {
     @GetMapping("/audit-log")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<Page<RequestLogResponse>> getAuditLogReport(
-            @RequestParam(required = false) Long requestId,
-            @RequestParam(required = false) Long actorId,
+            @RequestParam(required = false) String requestNo,
+            @RequestParam(required = false) String actorName,
             @RequestParam(required = false) LogAction action,
             @PageableDefault(size = 50, sort = "createdAt", direction = Sort.Direction.DESC) Pageable pageable) {
-        return ResponseEntity.ok(reportService.getAuditLogReport(requestId, actorId, action, pageable));
+        return ResponseEntity.ok(reportService.getAuditLogReport(requestNo, actorName, action, pageable));
     }
 }
