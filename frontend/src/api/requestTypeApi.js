@@ -23,4 +23,10 @@ export const requestTypeApi = {
 
   /** POST /api/request-types/{id}/forms */
   createForm: (id, data) => api.post(`/api/request-types/${id}/forms`, data),
+
+  /** GET /api/request-types/{id}/workflow */
+  getActiveWorkflow: (id) => api.get(`/api/request-types/${id}/workflow`),
+
+  /** POST /api/request-types/{id}/workflows */
+  createWorkflow: (id, data) => api.post(`/api/request-types/${id}/workflows`, data),
 };

@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { LayoutList, Plus, Edit2, ShieldOff, Save, FileCode, CheckCircle2, Trash2 } from 'lucide-react';
+import { LayoutList, Plus, Edit2, ShieldOff, Save, FileCode, CheckCircle2, Trash2, GitFork } from 'lucide-react';
 import { requestTypeApi } from '../api/requestTypeApi';
 import { categoryApi } from '../api/categoryApi';
 import { formApi } from '../api/formApi';
+import { workflowApi } from '../api/workflowApi';
 import { useToast } from '../hooks/useToast';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
@@ -19,11 +20,13 @@ export default function RequestTypesPage() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(0);
+  const [search, setSearch] = useState('');
+  const [categoryId, setCategoryId] = useState('');
 
   // Modals
   const [showTypeModal, setShowTypeModal] = useState(false);
   const [editType, setEditType] = useState(null);
-  const [typeForm, setTypeForm] = useState({ name: '', description: '', categoryId: '' });
+  const [typeForm, setTypeForm] = useState({ code: '', name: '', description: '', icon: '', categoryId: '', sortOrder: 0 });
   const [actionLoading, setActionLoading] = useState(false);
 
   // Forms Management Panel
@@ -32,6 +35,12 @@ export default function RequestTypesPage() {
   const [showFormModal, setShowFormModal] = useState(false);
   const [formFields, setFormFields] = useState([]);
   const [formName, setFormName] = useState('');
+
+  // Workflows
+  const [activeWorkflow, setActiveWorkflow] = useState(null);
+  const [workflowSteps, setWorkflowSteps] = useState([]);
+  const [showWorkflowModal, setShowWorkflowModal] = useState(false);
+  const [workflowForm, setWorkflowForm] = useState({ name: '', description: '' });
 
   const addField = () => {
     setFormFields([...formFields, {
@@ -55,8 +64,11 @@ export default function RequestTypesPage() {
   const fetchTypes = useCallback(async () => {
     setLoading(true);
     try {
+      const params = { page, size: 10 };
+      if (search) params.search = search;
+      if (categoryId) params.categoryId = categoryId;
       const [typeRes, catRes] = await Promise.allSettled([
-        requestTypeApi.getAll({ page, size: 10 }),
+        requestTypeApi.getAll(params),
         categoryApi.getAll()
       ]);
       if (typeRes.status === 'fulfilled') setTypesPage(parsePage(typeRes.value.data));
@@ -66,15 +78,19 @@ export default function RequestTypesPage() {
     } finally {
       setLoading(false);
     }
-  }, [page, toast]);
+  }, [page, search, categoryId, toast]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [search, categoryId]);
 
   useEffect(() => { fetchTypes(); }, [fetchTypes]);
 
   // Request Type Actions
   const handleSaveType = async (e) => {
     e.preventDefault();
-    if (!typeForm.name || !typeForm.categoryId) {
-      toast('Vui lòng nhập tên và chọn danh mục', 'warning');
+    if (!typeForm.name || !typeForm.categoryId || (!editType && !typeForm.code)) {
+      toast('Vui lòng nhập mã, tên và chọn danh mục', 'warning');
       return;
     }
     setActionLoading(true);
@@ -83,11 +99,14 @@ export default function RequestTypesPage() {
         name: typeForm.name,
         description: typeForm.description,
         categoryId: Number(typeForm.categoryId),
+        icon: typeForm.icon || null,
+        sortOrder: Number(typeForm.sortOrder) || 0,
       };
       if (editType) {
         await requestTypeApi.update(editType.id, payload);
         toast('Cập nhật loại yêu cầu thành công', 'success');
       } else {
+        payload.code = typeForm.code;
         await requestTypeApi.create(payload);
         toast('Tạo loại yêu cầu thành công', 'success');
       }
@@ -114,11 +133,23 @@ export default function RequestTypesPage() {
   const openFormManager = async (type) => {
     setSelectedType(type);
     setActiveForm(null);
+    setActiveWorkflow(null);
+    setWorkflowSteps([]);
     try {
       const { data } = await requestTypeApi.getActiveForm(type.id);
       setActiveForm(data);
     } catch (err) {
       // 404 means no active form, which is fine
+    }
+    try {
+      const { data: wf } = await requestTypeApi.getActiveWorkflow(type.id);
+      setActiveWorkflow(wf);
+      if (wf) {
+        const { data: steps } = await workflowApi.getSteps(wf.id);
+        setWorkflowSteps(steps || []);
+      }
+    } catch (err) {
+      // 404 means no active workflow, which is fine
     }
   };
 
@@ -162,6 +193,26 @@ export default function RequestTypesPage() {
     }
   };
 
+  const handleSaveWorkflow = async (e) => {
+    e.preventDefault();
+    if (!workflowForm.name) return toast('Vui lòng nhập tên quy trình', 'warning');
+
+    setActionLoading(true);
+    try {
+      await requestTypeApi.createWorkflow(selectedType.id, {
+        name: workflowForm.name,
+        description: workflowForm.description,
+      });
+      toast('Đã tạo phiên bản quy trình mới!', 'success');
+      setShowWorkflowModal(false);
+      openFormManager(selectedType);
+    } catch (err) {
+      toast(err?.response?.data?.message || 'Lỗi tạo quy trình', 'error');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
   return (
     <div className="flex gap-6 h-full">
       {/* ── Left: Request Types List ── */}
@@ -177,9 +228,27 @@ export default function RequestTypesPage() {
               <p className="text-xs text-slate-400">Thiết lập các loại yêu cầu & biểu mẫu</p>
             </div>
           </div>
-          <Button onClick={() => { setEditType(null); setTypeForm({ name: '', description: '', categoryId: '' }); setShowTypeModal(true); }} icon={Plus}>
+          <Button onClick={() => { setEditType(null); setTypeForm({ code: '', name: '', description: '', icon: '', categoryId: '', sortOrder: 0 }); setShowTypeModal(true); }} icon={Plus}>
             Thêm loại yêu cầu
           </Button>
+        </div>
+
+        {/* Filters */}
+        <div className="flex gap-4 items-center bg-slate-900/40 p-4 border border-slate-700/30 rounded-2xl">
+          <input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Tìm kiếm theo mã, tên hoặc mô tả"
+            className="flex-1 px-4 py-2 bg-slate-800/60 border border-slate-700/50 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500"
+          />
+          <select
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            className="w-48 px-4 py-2 bg-slate-800/60 border border-slate-700/50 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500"
+          >
+            <option value="">-- Tất cả danh mục --</option>
+            {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
         </div>
 
         {/* Table */}
@@ -194,7 +263,6 @@ export default function RequestTypesPage() {
                 <tr className="border-b border-slate-700/50 text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                   <th className="text-left px-4 py-3">Tên loại yêu cầu</th>
                   <th className="text-left px-4 py-3">Danh mục</th>
-                  <th className="text-left px-4 py-3">Quy trình (Workflow)</th>
                   <th className="text-left px-4 py-3">Trạng thái</th>
                   <th className="text-left px-4 py-3">Thao tác</th>
                 </tr>
@@ -207,17 +275,13 @@ export default function RequestTypesPage() {
                     onClick={() => openFormManager(type)}
                   >
                     <td className="px-4 py-3">
-                      <p className="font-semibold text-white text-sm">{type.name}</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-mono bg-slate-850 text-indigo-400 px-1.5 py-0.5 rounded border border-slate-700 font-bold">{type.code}</span>
+                        <p className="font-semibold text-white text-sm">{type.name}</p>
+                      </div>
                       <p className="text-xs text-slate-400 mt-0.5">{type.description}</p>
                     </td>
                     <td className="px-4 py-3 text-xs text-slate-300">{type.categoryName}</td>
-                    <td className="px-4 py-3 text-xs text-slate-300">
-                      {type.workflowName ? (
-                        <span className="text-indigo-400">{type.workflowName} (v{type.workflowVersion})</span>
-                      ) : (
-                        <span className="text-slate-500 italic">Chưa gắn</span>
-                      )}
-                    </td>
                     <td className="px-4 py-3">
                       {type.isActive ? (
                         <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full">Hoạt động</span>
@@ -227,7 +291,7 @@ export default function RequestTypesPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
-                        <button onClick={(e) => { e.stopPropagation(); setEditType(type); setTypeForm({ name: type.name, description: type.description, categoryId: type.categoryId }); setShowTypeModal(true); }} className="p-1.5 text-slate-400 hover:text-indigo-400">
+                        <button onClick={(e) => { e.stopPropagation(); setEditType(type); setTypeForm({ code: type.code, name: type.name, description: type.description, icon: type.icon || '', categoryId: type.categoryId, sortOrder: type.sortOrder || 0 }); setShowTypeModal(true); }} className="p-1.5 text-slate-400 hover:text-indigo-400">
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         {type.isActive && (
@@ -254,14 +318,15 @@ export default function RequestTypesPage() {
         <div className="w-96 shrink-0 bg-slate-900/60 border border-slate-700/40 rounded-2xl overflow-hidden flex flex-col max-h-[calc(100vh-120px)] sticky top-6 shadow-xl">
           <div className="px-5 py-4 border-b border-slate-700/40 bg-slate-800/30">
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <FileCode className="w-4 h-4 text-indigo-400" /> Biểu mẫu yêu cầu
+              <FileCode className="w-4 h-4 text-indigo-400" /> Thiết lập yêu cầu
             </h3>
             <p className="text-xs text-slate-400 mt-1">{selectedType.name}</p>
           </div>
 
-          <div className="flex-1 p-5 overflow-y-auto">
-            {activeForm ? (
-              <div className="space-y-4">
+          <div className="flex-1 p-5 overflow-y-auto space-y-4">
+            {/* Form Section */}
+            <div>
+              {activeForm ? (
                 <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-emerald-400 flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /> Biểu mẫu đang dùng</span>
@@ -315,19 +380,69 @@ export default function RequestTypesPage() {
                   </div>
                   <p className="text-[10px] text-slate-500 mt-2">Cập nhật: {formatDate(activeForm.createdAt)}</p>
                 </div>
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <FileCode className="w-10 h-10 text-slate-600 mx-auto mb-3" />
-                <p className="text-sm font-semibold text-slate-300">Chưa có biểu mẫu</p>
-                <p className="text-xs text-slate-500 mt-1">Vui lòng tạo biểu mẫu mới để người dùng có thể nộp yêu cầu.</p>
-              </div>
-            )}
+              ) : (
+                <div className="text-center py-8 bg-slate-900/40 border border-slate-800 rounded-xl">
+                  <FileCode className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+                  <p className="text-sm font-semibold text-slate-300">Chưa có biểu mẫu</p>
+                  <p className="text-xs text-slate-500 mt-1">Vui lòng tạo biểu mẫu mới để người dùng có thể nộp yêu cầu.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Workflow Section */}
+            <div>
+              {activeWorkflow ? (
+                <div className="p-4 bg-violet-500/10 border border-violet-500/20 rounded-xl space-y-3">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-violet-400 flex items-center gap-1"><GitFork className="w-3.5 h-3.5" /> Quy trình đang dùng</span>
+                    <span className="text-[10px] font-bold text-slate-400">Phiên bản {activeWorkflow.version}</span>
+                  </div>
+                  <p className="text-sm font-semibold text-white">{activeWorkflow.name}</p>
+                  {activeWorkflow.description && (
+                    <p className="text-xs text-slate-400">{activeWorkflow.description}</p>
+                  )}
+                  <div className="space-y-2 mt-3 pt-3 border-t border-slate-800/60">
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Các bước phê duyệt:</p>
+                    {workflowSteps.length === 0 ? (
+                      <p className="text-xs text-slate-500 italic">Chưa cấu hình bước phê duyệt nào.</p>
+                    ) : (
+                      <div className="space-y-3 pl-1">
+                        {workflowSteps.sort((a, b) => a.stepOrder - b.stepOrder).map((step, idx) => (
+                          <div key={step.id} className="relative flex gap-3 items-start">
+                            {idx < workflowSteps.length - 1 && (
+                              <div className="absolute left-[9px] top-[18px] bottom-[-18px] w-0.5 bg-slate-800" />
+                            )}
+                            <div className="w-5 h-5 rounded-full bg-violet-500/20 text-violet-400 border border-violet-500/30 flex items-center justify-center text-[10px] font-bold z-10 shrink-0">
+                              {step.stepOrder}
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-semibold text-slate-200">{step.name}</p>
+                              <p className="text-[10px] text-slate-500">
+                                {step.approverType} {step.timeLimitHours ? `· Hạn xử lý: ${step.timeLimitHours}h` : ''}
+                              </p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 bg-slate-900/40 border border-slate-800 rounded-xl">
+                  <GitFork className="w-10 h-10 text-slate-600 mx-auto mb-3" />
+                  <p className="text-sm font-semibold text-slate-300">Chưa có quy trình</p>
+                  <p className="text-xs text-slate-500 mt-1">Vui lòng tạo quy trình mới để phê duyệt.</p>
+                </div>
+              )}
+            </div>
           </div>
 
-          <div className="p-4 border-t border-slate-700/40">
+          <div className="p-4 border-t border-slate-700/40 space-y-2">
             <Button onClick={() => { setFormName(''); setFormFields([]); setShowFormModal(true); }} className="w-full" icon={Plus}>
-              Tạo phiên bản biểu mẫu mới
+              Tạo biểu mẫu mới
+            </Button>
+            <Button onClick={() => { setWorkflowForm({ name: '', description: '' }); setShowWorkflowModal(true); }} className="w-full bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700/50" icon={Plus}>
+              Tạo quy trình mới
             </Button>
           </div>
         </div>
@@ -336,6 +451,18 @@ export default function RequestTypesPage() {
       {/* ── Type Modal ── */}
       <Modal isOpen={showTypeModal} onClose={() => setShowTypeModal(false)} title={editType ? 'Cập nhật loại yêu cầu' : 'Thêm loại yêu cầu'} size="md">
         <form onSubmit={handleSaveType} className="space-y-4">
+          {!editType && (
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-400 uppercase">Mã loại yêu cầu *</label>
+              <input
+                value={typeForm.code}
+                onChange={(e) => setTypeForm({ ...typeForm, code: e.target.value.toUpperCase().replace(/[^A-Z0-9_]/g, '') })}
+                placeholder="VD: PHEP_NAM"
+                className="w-full px-4 py-2.5 bg-slate-800/60 border border-slate-700/50 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 font-mono"
+              />
+              <p className="text-[10px] text-slate-500">Chỉ gồm chữ in hoa, số và dấu gạch dưới.</p>
+            </div>
+          )}
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-400 uppercase">Tên loại yêu cầu *</label>
             <input
@@ -354,6 +481,26 @@ export default function RequestTypesPage() {
               <option value="">-- Chọn danh mục --</option>
               {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-400 uppercase">Icon</label>
+              <input
+                value={typeForm.icon}
+                onChange={(e) => setTypeForm({ ...typeForm, icon: e.target.value })}
+                placeholder="VD: FileText"
+                className="w-full px-4 py-2.5 bg-slate-800/60 border border-slate-700/50 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-slate-400 uppercase">Thứ tự (Sort)</label>
+              <input
+                type="number"
+                value={typeForm.sortOrder}
+                onChange={(e) => setTypeForm({ ...typeForm, sortOrder: e.target.value })}
+                className="w-full px-4 py-2.5 bg-slate-800/60 border border-slate-700/50 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500"
+              />
+            </div>
           </div>
           <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-400 uppercase">Mô tả</label>
@@ -452,6 +599,38 @@ export default function RequestTypesPage() {
           <div className="flex justify-end gap-3 pt-4 border-t border-slate-700/40">
             <Button type="button" variant="ghost" onClick={() => setShowFormModal(false)}>Hủy</Button>
             <Button type="submit" loading={actionLoading} icon={Save}>Lưu biểu mẫu</Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* ── Workflow Modal ── */}
+      <Modal isOpen={showWorkflowModal} onClose={() => setShowWorkflowModal(false)} title="Tạo quy trình mới" size="md">
+        <form onSubmit={handleSaveWorkflow} className="space-y-4">
+          <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-xl">
+            <p className="text-xs font-semibold text-amber-400">Lưu ý: Sau khi tạo, phiên bản này sẽ tự động trở thành quy trình chính (Active) cho loại yêu cầu "{selectedType?.name}".</p>
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-400 uppercase">Tên quy trình *</label>
+            <input
+              value={workflowForm.name}
+              onChange={(e) => setWorkflowForm({ ...workflowForm, name: e.target.value })}
+              placeholder="VD: Quy trình đề nghị thanh toán"
+              className="w-full px-4 py-2.5 bg-slate-800/60 border border-slate-700/50 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500"
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-400 uppercase">Mô tả</label>
+            <textarea
+              rows={3}
+              value={workflowForm.description}
+              onChange={(e) => setWorkflowForm({ ...workflowForm, description: e.target.value })}
+              placeholder="Mô tả các bước chính..."
+              className="w-full px-4 py-2.5 bg-slate-800/60 border border-slate-700/50 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 resize-none"
+            />
+          </div>
+          <div className="flex justify-end gap-3 pt-2">
+            <Button type="button" variant="ghost" onClick={() => setShowWorkflowModal(false)}>Hủy</Button>
+            <Button type="submit" loading={actionLoading} icon={Save}>Lưu quy trình</Button>
           </div>
         </form>
       </Modal>

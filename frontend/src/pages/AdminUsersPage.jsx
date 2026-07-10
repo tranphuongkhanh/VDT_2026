@@ -43,8 +43,8 @@ function UserRow({ user, onDeactivate, onEdit, onViewDetails, onManageRoles }) {
       </td>
       <td className="px-4 py-3">
         <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full ${user.isActive
-            ? 'bg-emerald-500/10 text-emerald-400'
-            : 'bg-slate-700/40 text-slate-500'
+          ? 'bg-emerald-500/10 text-emerald-400'
+          : 'bg-slate-700/40 text-slate-500'
           }`}>
           <span className={`w-1.5 h-1.5 rounded-full ${user.isActive ? 'bg-emerald-400' : 'bg-slate-500'}`} />
           {user.isActive ? 'Đang hoạt động' : 'Đã vô hiệu hóa'}
@@ -291,11 +291,11 @@ export default function AdminUsersPage() {
       };
       await userApi.assignRole(roleModalUser.id, payload);
       toast('Gán vai trò thành công', 'success');
-      
+
       setSelectedRoleId('');
       setExpiresAt('');
       fetchUsers();
-      
+
       // Update local state to reflect changes in current modal
       const updatedUserRes = await userApi.getById(roleModalUser.id);
       setRoleModalUser(updatedUserRes.data);
@@ -319,7 +319,7 @@ export default function AdminUsersPage() {
       toast('Đã xóa vai trò thành công', 'success');
       setConfirmRemoveRole(null);
       fetchUsers();
-      
+
       // Update local state to reflect changes in current modal
       const updatedUserRes = await userApi.getById(roleModalUser.id);
       setRoleModalUser(updatedUserRes.data);
@@ -364,7 +364,7 @@ export default function AdminUsersPage() {
           <input
             value={search}
             onChange={(e) => { setSearch(e.target.value); setPage(0); }}
-            placeholder="Tìm theo tên, username, email..."
+            placeholder="Tìm theo tên, username, email"
             className="bg-transparent text-sm text-white placeholder:text-slate-500 outline-none flex-1"
           />
         </div>
@@ -463,8 +463,8 @@ export default function AdminUsersPage() {
                 <h3 className="text-base font-extrabold text-white">{detailUser.fullName || '—'}</h3>
                 <p className="text-xs text-indigo-400 font-medium">@{detailUser.username}</p>
                 <span className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 mt-2 rounded-full ${detailUser.isActive
-                    ? 'bg-emerald-500/10 text-emerald-400'
-                    : 'bg-slate-700/40 text-slate-500'
+                  ? 'bg-emerald-500/10 text-emerald-400'
+                  : 'bg-slate-700/40 text-slate-500'
                   }`}>
                   {detailUser.isActive ? 'Đang hoạt động' : 'Đã vô hiệu hóa'}
                 </span>
