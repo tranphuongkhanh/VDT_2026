@@ -1,20 +1,23 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { GitFork, Plus, ChevronRight, ChevronDown, Zap } from 'lucide-react';
 import { workflowApi } from '../api/workflowApi';
+import { requestTypeApi } from '../api/requestTypeApi';
 import { useToast } from '../hooks/useToast';
 import Button from '../components/ui/Button';
 import Spinner from '../components/ui/Spinner';
 import EmptyState from '../components/ui/EmptyState';
 import Modal from '../components/ui/Modal';
 import { formatDate } from '../utils/helpers';
+import WorkflowStepsModal from '../components/WorkflowStepsModal';
 
-function WorkflowCard({ workflow, onActivate }) {
+function WorkflowCard({ workflow, onActivate, onConfigureSteps }) {
   const [expanded, setExpanded] = useState(false);
   const [steps, setSteps] = useState([]);
   const [stepsLoading, setStepsLoading] = useState(false);
 
   const toggleSteps = async () => {
-    if (!expanded && steps.length === 0) {
+    if (!expanded) {
       setStepsLoading(true);
       try {
         const { data } = await workflowApi.getSteps(workflow.id);
@@ -84,9 +87,20 @@ function WorkflowCard({ workflow, onActivate }) {
           {stepsLoading ? (
             <Spinner size="sm" label="Đang tải các bước..." />
           ) : steps.length === 0 ? (
-            <p className="text-xs text-slate-500 text-center py-3">Chưa có bước nào được cấu hình.</p>
+            <div className="text-center py-3 space-y-2">
+              <p className="text-xs text-slate-500">Chưa có bước nào được cấu hình.</p>
+              <Button onClick={() => onConfigureSteps(workflow.id)} size="sm" variant="secondary" icon={Plus}>
+                Thiết lập bước
+              </Button>
+            </div>
           ) : (
             <div className="space-y-2">
+              <div className="flex items-center justify-between mb-2 pb-2 border-b border-slate-800/50">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Các bước:</p>
+                <button type="button" onClick={() => onConfigureSteps(workflow.id)} className="text-[10px] text-indigo-400 hover:text-indigo-300 font-bold transition-colors">
+                  Cấu hình các bước
+                </button>
+              </div>
               {steps.sort((a, b) => a.stepOrder - b.stepOrder).map((step, idx) => (
                 <div key={step.id} className="flex items-start gap-3">
                   <div className="w-6 h-6 rounded-full bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-[10px] font-bold shrink-0">
@@ -116,17 +130,27 @@ function WorkflowCard({ workflow, onActivate }) {
 
 export default function WorkflowsPage() {
   const toast = useToast();
+  const navigate = useNavigate();
   const [workflows, setWorkflows] = useState([]);
+  const [requestTypes, setRequestTypes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [createForm, setCreateForm] = useState({ name: '', description: '', requestTypeId: '' });
   const [createLoading, setCreateLoading] = useState(false);
 
+  // Steps Modal State
+  const [showStepsModal, setShowStepsModal] = useState(false);
+  const [selectedStepsWorkflowId, setSelectedStepsWorkflowId] = useState(null);
+
   const fetchWorkflows = useCallback(async () => {
     setLoading(true);
     try {
-      const { data } = await workflowApi.getAll();
-      setWorkflows(data || []);
+      const [wfRes, rtRes] = await Promise.allSettled([
+        workflowApi.getAll(),
+        requestTypeApi.getAll({ size: 1000 })
+      ]);
+      if (wfRes.status === 'fulfilled') setWorkflows(wfRes.value.data || []);
+      if (rtRes.status === 'fulfilled') setRequestTypes(rtRes.value.data?.content || []);
     } catch {
       toast('Không thể tải danh sách quy trình', 'error');
     } finally {
@@ -149,17 +173,22 @@ export default function WorkflowsPage() {
   const handleCreate = async (e) => {
     e.preventDefault();
     if (!createForm.name.trim()) { toast('Vui lòng nhập tên quy trình', 'warning'); return; }
+    if (!createForm.requestTypeId) { toast('Vui lòng chọn loại yêu cầu', 'warning'); return; }
     setCreateLoading(true);
     try {
-      await workflowApi.create({
+      const { data } = await workflowApi.create({
         name: createForm.name,
         description: createForm.description,
-        requestTypeId: createForm.requestTypeId ? Number(createForm.requestTypeId) : undefined,
+        requestTypeId: Number(createForm.requestTypeId),
       });
-      toast('Đã tạo quy trình mới!', 'success');
+      toast('Đã tạo quy trình mới, đang mở thiết lập bước...', 'success');
       setShowCreate(false);
       setCreateForm({ name: '', description: '', requestTypeId: '' });
       fetchWorkflows();
+      if (data?.id) {
+        setSelectedStepsWorkflowId(data.id);
+        setShowStepsModal(true);
+      }
     } catch (err) {
       toast(err?.response?.data?.message || 'Không thể tạo quy trình', 'error');
     } finally {
@@ -195,7 +224,15 @@ export default function WorkflowsPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
           {workflows.map((wf) => (
-            <WorkflowCard key={wf.id} workflow={wf} onActivate={handleActivate} />
+            <WorkflowCard
+              key={wf.id}
+              workflow={wf}
+              onActivate={handleActivate}
+              onConfigureSteps={(wfId) => {
+                setSelectedStepsWorkflowId(wfId);
+                setShowStepsModal(true);
+              }}
+            />
           ))}
         </div>
       )}
@@ -213,6 +250,17 @@ export default function WorkflowsPage() {
             />
           </div>
           <div className="space-y-1.5">
+            <label className="text-xs font-bold text-slate-400 uppercase">Loại yêu cầu *</label>
+            <select
+              value={createForm.requestTypeId}
+              onChange={(e) => setCreateForm((f) => ({ ...f, requestTypeId: e.target.value }))}
+              className="w-full px-4 py-2.5 bg-slate-800/60 border border-slate-700/50 rounded-xl text-sm text-white focus:outline-none focus:border-indigo-500 transition-colors"
+            >
+              <option value="">-- Chọn loại yêu cầu --</option>
+              {requestTypes.map(rt => <option key={rt.id} value={rt.id}>{rt.name} ({rt.code})</option>)}
+            </select>
+          </div>
+          <div className="space-y-1.5">
             <label className="text-xs font-bold text-slate-400 uppercase">Mô tả</label>
             <textarea
               rows={3}
@@ -224,10 +272,20 @@ export default function WorkflowsPage() {
           </div>
           <div className="flex gap-3 justify-end">
             <Button type="button" variant="ghost" onClick={() => setShowCreate(false)}>Hủy</Button>
-            <Button type="submit" loading={createLoading}>Tạo quy trình</Button>
+            <Button type="submit" loading={createLoading}>Tạo các bước</Button>
           </div>
         </form>
       </Modal>
+
+      {/* Workflow Steps Modal */}
+      <WorkflowStepsModal
+        isOpen={showStepsModal}
+        onClose={() => {
+          setShowStepsModal(false);
+          fetchWorkflows();
+        }}
+        workflowId={selectedStepsWorkflowId}
+      />
     </div>
   );
 }

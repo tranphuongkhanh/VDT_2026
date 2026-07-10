@@ -71,7 +71,7 @@ export default function Sidebar({ pendingCount = 0 }) {
           </div>
           <div>
             <p className="text-sm font-extrabold text-white tracking-wide leading-none">VDT 2026</p>
-            <p className="text-[10px] text-indigo-400 font-bold tracking-widest uppercase">Workflow Hub</p>
+            <p className="text-[10px] text-indigo-400 font-bold tracking-widest uppercase">Approval System</p>
           </div>
         </div>
       </div>

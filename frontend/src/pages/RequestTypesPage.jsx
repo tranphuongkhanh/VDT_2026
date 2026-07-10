@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { LayoutList, Plus, Edit2, ShieldOff, Save, FileCode, CheckCircle2, Trash2, GitFork } from 'lucide-react';
 import { requestTypeApi } from '../api/requestTypeApi';
 import { categoryApi } from '../api/categoryApi';
 import { formApi } from '../api/formApi';
 import { workflowApi } from '../api/workflowApi';
+import WorkflowStepsModal from '../components/WorkflowStepsModal';
 import { useToast } from '../hooks/useToast';
 import Button from '../components/ui/Button';
 import Modal from '../components/ui/Modal';
@@ -14,6 +16,7 @@ import { parsePage, formatDate } from '../utils/helpers';
 
 export default function RequestTypesPage() {
   const toast = useToast();
+  const navigate = useNavigate();
 
   // State
   const [typesPage, setTypesPage] = useState({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 10 });
@@ -41,6 +44,8 @@ export default function RequestTypesPage() {
   const [workflowSteps, setWorkflowSteps] = useState([]);
   const [showWorkflowModal, setShowWorkflowModal] = useState(false);
   const [workflowForm, setWorkflowForm] = useState({ name: '', description: '' });
+  const [showStepsModal, setShowStepsModal] = useState(false);
+  const [selectedStepsWorkflowId, setSelectedStepsWorkflowId] = useState(null);
 
   const addField = () => {
     setFormFields([...formFields, {
@@ -199,13 +204,18 @@ export default function RequestTypesPage() {
 
     setActionLoading(true);
     try {
-      await requestTypeApi.createWorkflow(selectedType.id, {
+      const { data } = await requestTypeApi.createWorkflow(selectedType.id, {
         name: workflowForm.name,
         description: workflowForm.description,
       });
-      toast('Đã tạo phiên bản quy trình mới!', 'success');
+      toast('Đã tạo quy trình mới, đang mở thiết lập bước...', 'success');
       setShowWorkflowModal(false);
-      openFormManager(selectedType);
+      if (data?.id) {
+        setSelectedStepsWorkflowId(data.id);
+        setShowStepsModal(true);
+      } else {
+        openFormManager(selectedType);
+      }
     } catch (err) {
       toast(err?.response?.data?.message || 'Lỗi tạo quy trình', 'error');
     } finally {
@@ -395,7 +405,12 @@ export default function RequestTypesPage() {
                 <div className="p-4 bg-violet-500/10 border border-violet-500/20 rounded-xl space-y-3">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-bold text-violet-400 flex items-center gap-1"><GitFork className="w-3.5 h-3.5" /> Quy trình đang dùng</span>
-                    <span className="text-[10px] font-bold text-slate-400">Phiên bản {activeWorkflow.version}</span>
+                    <div className="flex items-center gap-2">
+                      <button onClick={() => { setSelectedStepsWorkflowId(activeWorkflow.id); setShowStepsModal(true); }} className="p-1 hover:bg-violet-500/20 text-violet-400 rounded transition-colors" title="Thiết lập bước">
+                        <Edit2 className="w-3.5 h-3.5" />
+                      </button>
+                      <span className="text-[10px] font-bold text-slate-400">Phiên bản {activeWorkflow.version}</span>
+                    </div>
                   </div>
                   <p className="text-sm font-semibold text-white">{activeWorkflow.name}</p>
                   {activeWorkflow.description && (
@@ -630,11 +645,20 @@ export default function RequestTypesPage() {
           </div>
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="ghost" onClick={() => setShowWorkflowModal(false)}>Hủy</Button>
-            <Button type="submit" loading={actionLoading} icon={Save}>Lưu quy trình</Button>
+            <Button type="submit" loading={actionLoading} icon={Save}>Tạo các bước</Button>
           </div>
         </form>
       </Modal>
 
+      {/* Workflow Steps Modal */}
+      <WorkflowStepsModal
+        isOpen={showStepsModal}
+        onClose={() => {
+          setShowStepsModal(false);
+          openFormManager(selectedType);
+        }}
+        workflowId={selectedStepsWorkflowId}
+      />
     </div>
   );
 }

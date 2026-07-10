@@ -7,13 +7,13 @@ import { timeAgo } from '../utils/helpers';
 import Button from '../components/ui/Button';
 
 const PAGE_TITLES = {
-  '/dashboard':    'Bảng Điều Khiển',
-  '/requests':     'Yêu Cầu Của Tôi',
-  '/approvals':    'Hàng Chờ Phê Duyệt',
-  '/workflows':    'Quản Lý Quy Trình',
-  '/admin/users':  'Quản Lý Người Dùng',
-  '/admin/roles':  'Quản Lý Vai Trò',
-  '/settings':     'Cài Đặt',
+  '/dashboard': 'Bảng Điều Khiển',
+  '/requests': 'Yêu Cầu Của Tôi',
+  '/approvals': 'Hàng Chờ Phê Duyệt',
+  '/workflows': 'Quản Lý Quy Trình',
+  '/admin/users': 'Quản Lý Người Dùng',
+  '/admin/roles': 'Quản Lý Vai Trò',
+  '/settings': 'Cài Đặt',
 };
 
 export default function Header({ onCreateRequest }) {
@@ -48,7 +48,7 @@ export default function Header({ onCreateRequest }) {
     if (!showNotifs) return;
     notificationApi.getAll({ page: 0, size: 10 })
       .then(({ data }) => setNotifications(data.content ?? []))
-      .catch(() => {});
+      .catch(() => { });
   }, [showNotifs]);
 
   // Click outside to close notification panel
@@ -77,7 +77,7 @@ export default function Header({ onCreateRequest }) {
     <header className="sticky top-0 z-30 bg-[#080d1a]/80 backdrop-blur-xl border-b border-slate-800/60 px-6 py-3.5 flex items-center justify-between gap-4">
       {/* Left: page title */}
       <div>
-        <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">VDT Workflow Hub</p>
+        <p className="text-[10px] font-bold text-indigo-500 uppercase tracking-widest">Approval System</p>
         <h1 className="text-lg font-extrabold text-white leading-tight">{title}</h1>
       </div>
 
