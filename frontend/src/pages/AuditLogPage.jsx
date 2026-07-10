@@ -9,10 +9,10 @@ import { parsePage, formatDateTime } from '../utils/helpers';
 
 export default function AuditLogPage() {
   const toast = useToast();
-  
+
   const [pageData, setPageData] = useState({ content: [], totalElements: 0, totalPages: 0, number: 0, size: 50 });
   const [loading, setLoading] = useState(true);
-  
+
   const [page, setPage] = useState(0);
   const [filter, setFilter] = useState({ requestId: '', actorId: '', action: '' });
 
@@ -23,7 +23,7 @@ export default function AuditLogPage() {
       if (filter.requestId) params.requestId = filter.requestId;
       if (filter.actorId) params.actorId = filter.actorId;
       if (filter.action) params.action = filter.action;
-      
+
       const { data } = await reportApi.getAuditLogReport(params);
       setPageData(parsePage(data));
     } catch {
@@ -67,7 +67,7 @@ export default function AuditLogPage() {
             className="bg-transparent text-sm text-white focus:outline-none w-28"
           />
         </div>
-        
+
         <div className="flex items-center gap-2 bg-slate-800/60 px-3 py-2 rounded-lg border border-slate-700/50">
           <Search className="w-4 h-4 text-slate-500" />
           <input
@@ -84,14 +84,17 @@ export default function AuditLogPage() {
           className="bg-slate-800/60 px-3 py-2 rounded-lg border border-slate-700/50 text-sm text-white focus:outline-none cursor-pointer"
         >
           <option value="">Tất cả hành động</option>
-          <option value="CREATE_REQUEST">CREATE_REQUEST</option>
-          <option value="UPDATE_REQUEST">UPDATE_REQUEST</option>
-          <option value="SUBMIT_REQUEST">SUBMIT_REQUEST</option>
-          <option value="APPROVE_STEP">APPROVE_STEP</option>
-          <option value="REJECT_REQUEST">REJECT_REQUEST</option>
-          <option value="RETURN_REQUEST">RETURN_REQUEST</option>
+          <option value="CREATED">CREATED</option>
+          <option value="UPDATED">UPDATED</option>
+          <option value="SUBMITTED">SUBMITTED</option>
+          <option value="STEP_ADVANCED">STEP_ADVANCED</option>
+          <option value="APPROVED">APPROVED</option>
+          <option value="REJECTED">REJECTED</option>
+          <option value="RETURNED">RETURNED</option>
+          <option value="CANCELLED">CANCELLED</option>
+          <option value="SYSTEM_TIMEOUT">SYSTEM_TIMEOUT</option>
         </select>
-        
+
         <button type="submit" className="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-2">
           <Filter className="w-4 h-4" /> Lọc
         </button>
@@ -127,7 +130,7 @@ export default function AuditLogPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs text-indigo-300">
-                      ID: {log.actorId} <br/>
+                      ID: {log.actorId} <br />
                       <span className="text-slate-500">{log.actorUsername}</span>
                     </td>
                     <td className="px-4 py-3 text-xs text-fuchsia-300">
