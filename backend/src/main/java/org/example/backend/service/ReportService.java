@@ -30,8 +30,8 @@ public class ReportService {
     }
 
     @Transactional(readOnly = true)
-    public Page<RequestLogResponse> getAuditLogReport(Long requestId, Long actorId, LogAction action, Pageable pageable) {
-        return requestLogRepository.findAllWithFilters(requestId, actorId, action, pageable)
+    public Page<RequestLogResponse> getAuditLogReport(String requestNo, String actorName, LogAction action, Pageable pageable) {
+        return requestLogRepository.findAllWithFilters(requestNo, actorName, action, pageable)
                 .map(RequestLogResponse::fromEntity);
     }
 }

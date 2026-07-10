@@ -3,11 +3,14 @@ package org.example.backend.controller;
 import jakarta.validation.Valid;
 import org.example.backend.dto.request.CreateFormRequest;
 import org.example.backend.dto.request.CreateRequestTypeRequest;
+import org.example.backend.dto.request.CreateWorkflowRequest;
 import org.example.backend.dto.request.UpdateRequestTypeRequest;
 import org.example.backend.dto.response.FormResponse;
 import org.example.backend.dto.response.RequestTypeResponse;
+import org.example.backend.dto.response.WorkflowResponse;
 import org.example.backend.service.FormService;
 import org.example.backend.service.RequestTypeService;
+import org.example.backend.service.WorkflowService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,10 +28,12 @@ public class RequestTypeController {
 
     private final RequestTypeService requestTypeService;
     private final FormService formService;
+    private final WorkflowService workflowService;
 
-    public RequestTypeController(RequestTypeService requestTypeService, FormService formService) {
+    public RequestTypeController(RequestTypeService requestTypeService, FormService formService, WorkflowService workflowService) {
         this.requestTypeService = requestTypeService;
         this.formService = formService;
+        this.workflowService = workflowService;
     }
 
     @GetMapping
@@ -91,6 +96,13 @@ public class RequestTypeController {
         return ResponseEntity.ok(activeForm);
     }
 
+    @GetMapping("/{id}/workflow")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<WorkflowResponse> getActiveWorkflow(@PathVariable Long id) {
+        WorkflowResponse activeWorkflow = workflowService.getActiveWorkflowByRequestTypeId(id);
+        return ResponseEntity.ok(activeWorkflow);
+    }
+
     @PostMapping("/{id}/forms")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<FormResponse> createForm(
@@ -99,5 +111,16 @@ public class RequestTypeController {
             Principal principal) {
         FormResponse createdForm = formService.createForm(id, request, principal.getName());
         return ResponseEntity.ok(createdForm);
+    }
+
+    @PostMapping("/{id}/workflows")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<WorkflowResponse> createWorkflow(
+            @PathVariable Long id,
+            @Valid @RequestBody CreateWorkflowRequest request,
+            Principal principal) {
+        request.setRequestTypeId(id);
+        WorkflowResponse createdWorkflow = workflowService.createWorkflow(request, principal.getName());
+        return ResponseEntity.ok(createdWorkflow);
     }
 }

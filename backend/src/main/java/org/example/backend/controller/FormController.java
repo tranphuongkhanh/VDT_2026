@@ -17,7 +17,7 @@ public class FormController {
     }
 
     @GetMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<FormResponse> getFormById(@PathVariable Long id) {
         FormResponse form = formService.getFormById(id);
         return ResponseEntity.ok(form);

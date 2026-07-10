@@ -18,7 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.example.backend.TestDatabaseCleanup;
 import java.time.LocalDateTime;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -32,6 +32,9 @@ class RequestTypeAndFormControllerTest {
 
         @Autowired
         private MockMvc mockMvc;
+
+        @Autowired
+        private TestDatabaseCleanup testDatabaseCleanup;
 
         @Autowired
         private UserRepository userRepository;
@@ -78,25 +81,7 @@ class RequestTypeAndFormControllerTest {
 
         @BeforeEach
         void setUp() {
-                formRepository.deleteAll();
-                requestTypeRepository.deleteAll();
-                categoryRepository.deleteAll();
-                userRoleRepository.deleteAll();
-                refreshTokenRepository.deleteAll();
-                passwordResetTokenRepository.deleteAll();
-                userRepository.deleteAll();
-                departmentRepository.deleteAll();
-                roleRepository.deleteAll();
-
-                formRepository.flush();
-                requestTypeRepository.flush();
-                categoryRepository.flush();
-                userRoleRepository.flush();
-                refreshTokenRepository.flush();
-                passwordResetTokenRepository.flush();
-                userRepository.flush();
-                departmentRepository.flush();
-                roleRepository.flush();
+                testDatabaseCleanup.clearDatabase();
 
                 adminRole = Role.builder().code("ADMIN").name("Administrator").isSystem(true).build();
                 adminRole = roleRepository.saveAndFlush(adminRole);
@@ -257,23 +242,26 @@ class RequestTypeAndFormControllerTest {
                                 .schemaData(schema)
                                 .build();
 
-                // Create new form version (default inactive)
+                // Create new form version (default active)
                 MvcResult result = mockMvc.perform(post("/api/request-types/" + rt.getId() + "/forms")
                                 .header("Authorization", "Bearer " + adminToken)
                                 .contentType(MediaType.APPLICATION_JSON)
                                 .content(objectMapper.writeValueAsString(createForm)))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.version").value(1))
-                                .andExpect(jsonPath("$.isActive").value(false))
+                                .andExpect(jsonPath("$.isActive").value(true))
                                 .andReturn();
 
                 String resStr = result.getResponse().getContentAsString();
                 Long formId = objectMapper.readTree(resStr).get("id").asLong();
 
-                // Retrieve active form - should throw 404 because none is active yet
+                // Retrieve active form - should return V1
                 mockMvc.perform(get("/api/request-types/" + rt.getId() + "/form")
                                 .header("Authorization", "Bearer " + staffToken))
-                                .andExpect(status().isNotFound());
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.id").value(formId))
+                                .andExpect(jsonPath("$.version").value(1))
+                                .andExpect(jsonPath("$.isActive").value(true));
 
                 // Get detailed form version as ADMIN
                 mockMvc.perform(get("/api/forms/" + formId)
@@ -307,7 +295,7 @@ class RequestTypeAndFormControllerTest {
                                 .content(objectMapper.writeValueAsString(createFormV2)))
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$.version").value(2))
-                                .andExpect(jsonPath("$.isActive").value(false))
+                                .andExpect(jsonPath("$.isActive").value(true))
                                 .andReturn();
 
                 Long formV2Id = objectMapper.readTree(resultV2.getResponse().getContentAsString()).get("id").asLong();

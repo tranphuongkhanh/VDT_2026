@@ -67,8 +67,22 @@ public class WorkflowService {
         return convertToWorkflowResponse(workflow);
     }
 
+    @Transactional(readOnly = true)
+    public WorkflowResponse getActiveWorkflowByRequestTypeId(Long requestTypeId) {
+        if (!requestTypeRepository.existsById(requestTypeId)) {
+            throw new ResourceNotFoundException("Request type not found with id: " + requestTypeId);
+        }
+        Workflow workflow = workflowRepository.findByRequestTypeIdAndIsActiveTrue(requestTypeId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Active workflow not found for request type id: " + requestTypeId));
+        return convertToWorkflowResponse(workflow);
+    }
+
     @Transactional
     public WorkflowResponse createWorkflow(CreateWorkflowRequest request, String username) {
+        if (request.getRequestTypeId() == null) {
+            throw new BadRequestException("Request type ID cannot be null");
+        }
         RequestType requestType = requestTypeRepository.findById(request.getRequestTypeId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Request type not found with id: " + request.getRequestTypeId()));
@@ -82,12 +96,18 @@ public class WorkflowService {
                 .max()
                 .orElse(0) + 1;
 
+        workflowRepository.findByRequestTypeIdAndIsActiveTrue(request.getRequestTypeId())
+                .ifPresent(activeWorkflow -> {
+                    activeWorkflow.setIsActive(false);
+                    workflowRepository.saveAndFlush(activeWorkflow);
+                });
+
         Workflow workflow = Workflow.builder()
                 .requestType(requestType)
                 .name(request.getName().trim())
                 .description(request.getDescription())
                 .version(nextVersion)
-                .isActive(false) // New workflow versions are inactive by default
+                .isActive(true) // Active by default
                 .createdBy(currentUser)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())

@@ -10,11 +10,26 @@ import org.example.backend.enums.RequestStatus;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 @Setter
 @Builder
 public class RequestResponse {
+
+    private List<ResolvedStep> workflowSteps;
+
+    @Getter
+    @Setter
+    @Builder
+    public static class ResolvedStep {
+        private Long id;
+        private Integer stepOrder;
+        private String name;
+        private String approverType;
+        private List<String> resolvedApprovers;
+        private String status; // "APPROVED", "REJECTED", "RETURNED", "PENDING", "NOT_STARTED"
+    }
 
     private Long id;
     private String requestNo;

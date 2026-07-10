@@ -64,7 +64,7 @@ public class WorkflowController {
     }
 
     @GetMapping("/{id}/steps")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<WorkflowStepResponse>> getWorkflowSteps(@PathVariable Long id) {
         return ResponseEntity.ok(workflowService.getWorkflowSteps(id));
     }

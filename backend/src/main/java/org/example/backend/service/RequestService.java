@@ -22,6 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.Year;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -94,7 +95,7 @@ public class RequestService {
         // Ghi log
         saveLog(saved, requester, LogAction.CREATED, null, RequestStatus.DRAFT, null, 0);
 
-        return RequestResponse.fromEntity(saved);
+        return toResponse(saved);
     }
 
     @Transactional
@@ -133,23 +134,10 @@ public class RequestService {
         Request saved = requestRepository.save(request);
         saveLog(saved, currentUser, LogAction.UPDATED, request.getStatus(), request.getStatus(), null, null);
 
-        return RequestResponse.fromEntity(saved);
+        return toResponse(saved);
     }
 
-    @Transactional
-    public void deleteRequest(Long id, String username) {
-        Request request = findRequestByIdForUpdate(id);
-        User currentUser = findUserByUsername(username);
 
-        if (!request.getRequester().getId().equals(currentUser.getId())) {
-            throw new BadRequestException("You are not the owner of this request");
-        }
-        if (request.getStatus() != RequestStatus.DRAFT) {
-            throw new BadRequestException("Can only delete request in DRAFT status");
-        }
-
-        requestRepository.delete(request);
-    }
 
     @Transactional
     public RequestResponse cancelRequest(Long id, String username) {
@@ -171,7 +159,7 @@ public class RequestService {
 
         saveLog(saved, currentUser, LogAction.CANCELLED, oldStatus, RequestStatus.CANCELLED, null, null);
 
-        return RequestResponse.fromEntity(saved);
+        return toResponse(saved);
     }
 
     // =========================================================================
@@ -207,6 +195,10 @@ public class RequestService {
         request.setStatus(RequestStatus.SUBMITTED);
         request.setSubmittedAt(LocalDateTime.now());
         request.setUpdatedAt(LocalDateTime.now());
+
+        // Xóa các phê duyệt/trả lại cũ để tránh trùng lặp/vi phạm unique constraint khi phê duyệt lại
+        requestApprovalRepository.deleteByRequestId(request.getId());
+
         requestRepository.save(request);
 
         saveLog(request, currentUser, LogAction.SUBMITTED, oldStatus, RequestStatus.SUBMITTED, null, null);
@@ -214,7 +206,7 @@ public class RequestService {
         // Chuyển ngay sang IN_REVIEW bước 1
         advanceToNextStep(request, null);
 
-        return RequestResponse.fromEntity(requestRepository.save(request));
+        return toResponse(requestRepository.save(request));
     }
 
     // =========================================================================
@@ -255,7 +247,7 @@ public class RequestService {
             processApproveAction(request, step, currentUser);
         }
 
-        return RequestResponse.fromEntity(requestRepository.save(request));
+        return toResponse(requestRepository.save(request));
     }
 
     @Transactional
@@ -292,7 +284,7 @@ public class RequestService {
         notificationService.notifyRequester(request, NotificationType.REQUEST_REJECTED,
                 req != null ? req.getComment() : null);
 
-        return RequestResponse.fromEntity(request);
+        return toResponse(request);
     }
 
     @Transactional
@@ -329,7 +321,7 @@ public class RequestService {
         notificationService.notifyRequester(request, NotificationType.REQUEST_RETURNED,
                 req != null ? req.getComment() : null);
 
-        return RequestResponse.fromEntity(request);
+        return toResponse(request);
     }
 
     // =========================================================================
@@ -371,7 +363,7 @@ public class RequestService {
             }
         }
 
-        return RequestResponse.fromEntity(request);
+        return toResponse(request);
     }
 
     @Transactional(readOnly = true)
@@ -641,6 +633,53 @@ public class RequestService {
     private User findUserByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("User not found: " + username));
+    }
+
+    private RequestResponse toResponse(Request request) {
+        RequestResponse response = RequestResponse.fromEntity(request);
+        try {
+            response.setWorkflowSteps(resolveWorkflowSteps(request));
+        } catch (Exception e) {
+            System.err.println("Could not resolve workflow steps: " + e.getMessage());
+        }
+        return response;
+    }
+
+    private List<RequestResponse.ResolvedStep> resolveWorkflowSteps(Request request) {
+        List<WorkflowStep> steps = workflowStepRepository.findByWorkflowIdOrderByStepOrderAsc(request.getWorkflow().getId());
+        List<RequestResponse.ResolvedStep> resolvedSteps = new ArrayList<>();
+        
+        for (WorkflowStep step : steps) {
+            List<User> approvers = approverResolverService.findApproversForStep(step, request.getRequester());
+            List<String> resolvedApproverNames = approvers.stream()
+                    .map(u -> u.getFullName() != null ? u.getFullName() : u.getUsername())
+                    .collect(Collectors.toList());
+
+            String status = "NOT_STARTED";
+            if (request.getStatus() == RequestStatus.APPROVED) {
+                status = "APPROVED";
+            } else if (step.getStepOrder() < request.getCurrentStep()) {
+                status = "APPROVED";
+            } else if (step.getStepOrder().equals(request.getCurrentStep())) {
+                if (request.getStatus() == RequestStatus.IN_REVIEW) {
+                    status = "PENDING";
+                } else if (request.getStatus() == RequestStatus.REJECTED) {
+                    status = "REJECTED";
+                } else if (request.getStatus() == RequestStatus.RETURNED) {
+                    status = "RETURNED";
+                }
+            }
+
+            resolvedSteps.add(RequestResponse.ResolvedStep.builder()
+                    .id(step.getId())
+                    .stepOrder(step.getStepOrder())
+                    .name(step.getName())
+                    .approverType(step.getApproverType().name())
+                    .resolvedApprovers(resolvedApproverNames)
+                    .status(status)
+                    .build());
+        }
+        return resolvedSteps;
     }
 
 }

@@ -16,11 +16,14 @@ public class RequestLogResponse {
 
     private Long id;
     private Long requestId;
+    private String requestNo;
+    private String requestTitle;
 
     // Actor (null = hệ thống tự động)
     private Long actorId;
     private String actorUsername;
     private String actorFullName;
+    private String actorEmail;
 
     private LogAction action;
     private RequestStatus oldStatus;
@@ -33,9 +36,12 @@ public class RequestLogResponse {
         return RequestLogResponse.builder()
                 .id(log.getId())
                 .requestId(log.getRequest().getId())
+                .requestNo(log.getRequest().getRequestNo())
+                .requestTitle(log.getRequest().getTitle())
                 .actorId(log.getActor() != null ? log.getActor().getId() : null)
                 .actorUsername(log.getActor() != null ? log.getActor().getUsername() : null)
                 .actorFullName(log.getActor() != null ? log.getActor().getFullName() : null)
+                .actorEmail(log.getActor() != null ? log.getActor().getEmail() : null)
                 .action(log.getAction())
                 .oldStatus(log.getOldStatus())
                 .newStatus(log.getNewStatus())

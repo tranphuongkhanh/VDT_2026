@@ -18,7 +18,7 @@ spring:
 app:
   jwt:
     secret: ${JWT_SECRET}
-    expiration-ms: 900000 # 15 minutes (15 * 60 * 1000)
+    expiration-ms: 3600000 # 60 minutes (60 * 60 * 1000)
     refresh-expiration-ms: 604800000 # 7 days (7 * 24 * 60 * 60 * 1000)
 
 minio:
@@ -26,3 +26,15 @@ minio:
   access-key: ${MINIO_ACCESS_KEY:minioadmin}
   secret-key: ${MINIO_SECRET_KEY:minioadmin}
   bucket: ${MINIO_BUCKET:vdt-2026}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: approval-system
