@@ -73,6 +73,33 @@ export default function Header({ onCreateRequest }) {
     }
   };
 
+  const handleMarkAsRead = async (n) => {
+    if (n.isRead) {
+      handleNavigation(n);
+      return;
+    }
+    try {
+      await notificationApi.markAsRead(n.id);
+      setUnreadCount((prev) => Math.max(0, prev - 1));
+      setNotifications((prev) =>
+        prev.map((item) => (item.id === n.id ? { ...item, isRead: true } : item))
+      );
+      handleNavigation(n);
+    } catch {
+      toast('Không thể đánh dấu đã đọc', 'error');
+    }
+  };
+
+  const handleNavigation = (n) => {
+    setShowNotifs(false);
+    if (!n.requestId) return;
+    if (n.type === 'PENDING_APPROVAL') {
+      navigate('/approvals');
+    } else {
+      navigate('/requests');
+    }
+  };
+
   return (
     <header className="sticky top-0 z-30 bg-[#080d1a]/80 backdrop-blur-xl border-b border-slate-800/60 px-6 py-3.5 flex items-center justify-between gap-4">
       {/* Left: page title */}
@@ -126,7 +153,8 @@ export default function Header({ onCreateRequest }) {
                   notifications.map((n) => (
                     <div
                       key={n.id}
-                      className={`px-4 py-3 text-xs transition-colors ${n.isRead ? 'text-slate-500' : 'text-slate-200 bg-indigo-500/5'}`}
+                      onClick={() => handleMarkAsRead(n)}
+                      className={`px-4 py-3 text-xs transition-colors cursor-pointer hover:bg-slate-800/40 ${n.isRead ? 'text-slate-500' : 'text-slate-200 bg-indigo-500/5'}`}
                     >
                       <p className="font-semibold leading-snug">{n.title || n.message}</p>
                       <p className="text-slate-500 mt-0.5">{timeAgo(n.createdAt)}</p>

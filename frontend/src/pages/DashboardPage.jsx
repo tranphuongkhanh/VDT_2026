@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useOutletContext, Link } from 'react-router-dom';
 import {
   FileText, Clock, CheckCircle2, XCircle, RotateCcw,
-  GitFork, ArrowRight, AlertTriangle,
+  GitFork, ArrowRight, AlertTriangle, X,
 } from 'lucide-react';
 import { dashboardApi } from '../api/dashboardApi';
 import { requestApi } from '../api/requestApi';
@@ -75,13 +75,14 @@ export default function DashboardPage() {
       {/* Personal stats grid */}
       <div>
         <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wider mb-4">Thống kê cá nhân</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
           <StatCard label="Tổng yêu cầu"   value={stats?.totalMyRequests}    icon={FileText}     accent="indigo" />
           <StatCard label="Bản nháp"        value={stats?.myDraftRequests}    icon={FileText}     accent="violet" />
           <StatCard label="Đang xử lý"     value={stats?.myPendingRequests}  icon={Clock}        accent="amber"  />
           <StatCard label="Đã duyệt"        value={stats?.myApprovedRequests} icon={CheckCircle2} accent="emerald"/>
           <StatCard label="Từ chối"         value={stats?.myRejectedRequests} icon={XCircle}      accent="rose"   />
           <StatCard label="Trả lại"         value={stats?.myReturnedRequests} icon={RotateCcw}    accent="sky"    />
+          <StatCard label="Đã hủy"          value={stats?.myCancelledRequests} icon={X}           accent="slate"  />
         </div>
       </div>
 

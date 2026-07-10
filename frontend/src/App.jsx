@@ -16,6 +16,7 @@ import AuditLogPage from './pages/AuditLogPage';
 import SettingsPage from './pages/SettingsPage';
 import AdminRolesPage from './pages/AdminRolesPage';
 import CategoryPage from './pages/CategoryPage';
+import NotificationsPage from './pages/NotificationsPage';
 import { ROLES } from './utils/constants';
 
 export default function App() {
@@ -42,6 +43,7 @@ export default function App() {
 
               {/* Any authenticated user — backend tự lọc theo approver logic */}
               <Route path="approvals" element={<ApprovalsPage />} />
+              <Route path="notifications" element={<NotificationsPage />} />
 
               {/* Chỉ ADMIN theo README */}
               <Route path="admin" element={<ProtectedRoute roles={[ROLES.ADMIN]}><Outlet /></ProtectedRoute>}>

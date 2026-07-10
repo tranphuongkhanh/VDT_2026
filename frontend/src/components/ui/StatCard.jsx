@@ -10,6 +10,7 @@ export default function StatCard({ label, value, icon: Icon, accent = 'indigo', 
     rose:   'bg-rose-500/10   text-rose-400',
     violet: 'bg-violet-500/10 text-violet-400',
     sky:    'bg-sky-500/10    text-sky-400',
+    slate:  'bg-slate-500/10  text-slate-400',
   };
 
   return (

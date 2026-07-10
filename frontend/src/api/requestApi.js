@@ -19,8 +19,7 @@ export const requestApi = {
   /** PATCH /api/requests/{id}/cancel — hủy yêu cầu */
   cancelRequest: (id) => api.patch(`/api/requests/${id}/cancel`),
 
-  /** DELETE /api/requests/{id} — xóa yêu cầu (DRAFT only) */
-  deleteRequest: (id) => api.delete(`/api/requests/${id}`),
+
 
   /** POST /api/requests/{id}/approve — phê duyệt */
   approveRequest: (id, data) => api.post(`/api/requests/${id}/approve`, data ?? {}),
