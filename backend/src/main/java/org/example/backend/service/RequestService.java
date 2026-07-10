@@ -195,6 +195,10 @@ public class RequestService {
         request.setStatus(RequestStatus.SUBMITTED);
         request.setSubmittedAt(LocalDateTime.now());
         request.setUpdatedAt(LocalDateTime.now());
+
+        // Xóa các phê duyệt/trả lại cũ để tránh trùng lặp/vi phạm unique constraint khi phê duyệt lại
+        requestApprovalRepository.deleteByRequestId(request.getId());
+
         requestRepository.save(request);
 
         saveLog(request, currentUser, LogAction.SUBMITTED, oldStatus, RequestStatus.SUBMITTED, null, null);

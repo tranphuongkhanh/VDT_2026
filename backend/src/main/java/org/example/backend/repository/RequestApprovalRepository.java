@@ -22,4 +22,7 @@ public interface RequestApprovalRepository extends JpaRepository<RequestApproval
 
     // Kiểm tra xem người dùng đã hành động trên bước này chưa
     boolean existsByRequestIdAndWorkflowStepIdAndApproverId(Long requestId, Long workflowStepId, Long approverId);
+
+    // Xóa tất cả approval của một request (dùng khi nộp lại)
+    void deleteByRequestId(Long requestId);
 }
