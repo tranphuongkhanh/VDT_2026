@@ -93,16 +93,7 @@ public class RequestController {
         return ResponseEntity.ok(requestService.submitRequest(id, request, userDetails.getUsername()));
     }
 
-    /**
-     * Xóa yêu cầu (chỉ DRAFT)
-     */
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteRequest(
-            @PathVariable Long id,
-            @AuthenticationPrincipal UserDetails userDetails) {
-        requestService.deleteRequest(id, userDetails.getUsername());
-        return ResponseEntity.noContent().build();
-    }
+
 
     /**
      * Hủy yêu cầu

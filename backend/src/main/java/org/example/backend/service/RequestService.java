@@ -136,20 +136,7 @@ public class RequestService {
         return RequestResponse.fromEntity(saved);
     }
 
-    @Transactional
-    public void deleteRequest(Long id, String username) {
-        Request request = findRequestByIdForUpdate(id);
-        User currentUser = findUserByUsername(username);
 
-        if (!request.getRequester().getId().equals(currentUser.getId())) {
-            throw new BadRequestException("You are not the owner of this request");
-        }
-        if (request.getStatus() != RequestStatus.DRAFT) {
-            throw new BadRequestException("Can only delete request in DRAFT status");
-        }
-
-        requestRepository.delete(request);
-    }
 
     @Transactional
     public RequestResponse cancelRequest(Long id, String username) {
