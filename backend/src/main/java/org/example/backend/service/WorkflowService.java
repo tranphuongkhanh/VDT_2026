@@ -80,6 +80,9 @@ public class WorkflowService {
 
     @Transactional
     public WorkflowResponse createWorkflow(CreateWorkflowRequest request, String username) {
+        if (request.getRequestTypeId() == null) {
+            throw new BadRequestException("Request type ID cannot be null");
+        }
         RequestType requestType = requestTypeRepository.findById(request.getRequestTypeId())
                 .orElseThrow(() -> new ResourceNotFoundException(
                         "Request type not found with id: " + request.getRequestTypeId()));

@@ -3,6 +3,7 @@ package org.example.backend.controller;
 import jakarta.validation.Valid;
 import org.example.backend.dto.request.CreateFormRequest;
 import org.example.backend.dto.request.CreateRequestTypeRequest;
+import org.example.backend.dto.request.CreateWorkflowRequest;
 import org.example.backend.dto.request.UpdateRequestTypeRequest;
 import org.example.backend.dto.response.FormResponse;
 import org.example.backend.dto.response.RequestTypeResponse;
@@ -110,5 +111,16 @@ public class RequestTypeController {
             Principal principal) {
         FormResponse createdForm = formService.createForm(id, request, principal.getName());
         return ResponseEntity.ok(createdForm);
+    }
+
+    @PostMapping("/{id}/workflows")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<WorkflowResponse> createWorkflow(
+            @PathVariable Long id,
+            @Valid @RequestBody CreateWorkflowRequest request,
+            Principal principal) {
+        request.setRequestTypeId(id);
+        WorkflowResponse createdWorkflow = workflowService.createWorkflow(request, principal.getName());
+        return ResponseEntity.ok(createdWorkflow);
     }
 }

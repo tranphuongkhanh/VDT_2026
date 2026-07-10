@@ -12,7 +12,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateWorkflowRequest {
-    @NotNull(message = "Request type ID cannot be null")
     private Long requestTypeId;
 
     @NotBlank(message = "Name cannot be blank")
