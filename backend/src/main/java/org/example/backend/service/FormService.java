@@ -63,12 +63,18 @@ public class FormService {
                 .max()
                 .orElse(0) + 1;
 
+        formRepository.findByRequestTypeIdAndIsActiveTrue(requestTypeId)
+                .ifPresent(activeForm -> {
+                    activeForm.setIsActive(false);
+                    formRepository.saveAndFlush(activeForm);
+                });
+
         Form form = Form.builder()
                 .requestType(requestType)
                 .name(request.getName().trim())
                 .version(nextVersion)
                 .schemaData(request.getSchemaData())
-                .isActive(false) // New form versions are inactive by default
+                .isActive(true) // Active by default
                 .createdBy(currentUser)
                 .createdAt(LocalDateTime.now())
                 .build();

@@ -82,12 +82,18 @@ public class WorkflowService {
                 .max()
                 .orElse(0) + 1;
 
+        workflowRepository.findByRequestTypeIdAndIsActiveTrue(request.getRequestTypeId())
+                .ifPresent(activeWorkflow -> {
+                    activeWorkflow.setIsActive(false);
+                    workflowRepository.saveAndFlush(activeWorkflow);
+                });
+
         Workflow workflow = Workflow.builder()
                 .requestType(requestType)
                 .name(request.getName().trim())
                 .description(request.getDescription())
                 .version(nextVersion)
-                .isActive(false) // New workflow versions are inactive by default
+                .isActive(true) // Active by default
                 .createdBy(currentUser)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
