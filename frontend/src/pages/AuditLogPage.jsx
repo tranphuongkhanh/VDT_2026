@@ -14,14 +14,14 @@ export default function AuditLogPage() {
   const [loading, setLoading] = useState(true);
 
   const [page, setPage] = useState(0);
-  const [filter, setFilter] = useState({ requestId: '', actorId: '', action: '' });
+  const [filter, setFilter] = useState({ requestNo: '', actorName: '', action: '' });
 
   const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
       const params = { page, size: 50 };
-      if (filter.requestId) params.requestId = filter.requestId;
-      if (filter.actorId) params.actorId = filter.actorId;
+      if (filter.requestNo) params.requestNo = filter.requestNo;
+      if (filter.actorName) params.actorName = filter.actorName;
       if (filter.action) params.action = filter.action;
 
       const { data } = await reportApi.getAuditLogReport(params);
@@ -61,9 +61,9 @@ export default function AuditLogPage() {
         <div className="flex items-center gap-2 bg-slate-800/60 px-3 py-2 rounded-lg border border-slate-700/50">
           <Search className="w-4 h-4 text-slate-500" />
           <input
-            value={filter.requestId}
-            onChange={e => setFilter({ ...filter, requestId: e.target.value })}
-            placeholder="ID Yêu cầu..."
+            value={filter.requestNo}
+            onChange={e => setFilter({ ...filter, requestNo: e.target.value })}
+            placeholder="Mã yêu cầu..."
             className="bg-transparent text-sm text-white focus:outline-none w-28"
           />
         </div>
@@ -71,9 +71,9 @@ export default function AuditLogPage() {
         <div className="flex items-center gap-2 bg-slate-800/60 px-3 py-2 rounded-lg border border-slate-700/50">
           <Search className="w-4 h-4 text-slate-500" />
           <input
-            value={filter.actorId}
-            onChange={e => setFilter({ ...filter, actorId: e.target.value })}
-            placeholder="ID Người dùng..."
+            value={filter.actorName}
+            onChange={e => setFilter({ ...filter, actorName: e.target.value })}
+            placeholder="Người thực hiện..."
             className="bg-transparent text-sm text-white focus:outline-none w-32"
           />
         </div>
@@ -115,6 +115,8 @@ export default function AuditLogPage() {
                   <th className="text-left px-4 py-3">Hành động</th>
                   <th className="text-left px-4 py-3">Người thực hiện</th>
                   <th className="text-left px-4 py-3">Yêu cầu liên quan</th>
+                  <th className="text-left px-4 py-3">Thay đổi trạng thái</th>
+                  <th className="text-left px-4 py-3">Thay đổi bước</th>
                   <th className="text-left px-4 py-3">Chi tiết (JSON)</th>
                 </tr>
               </thead>
@@ -130,11 +132,42 @@ export default function AuditLogPage() {
                       </span>
                     </td>
                     <td className="px-4 py-3 text-xs text-indigo-300">
-                      ID: {log.actorId} <br />
-                      <span className="text-slate-500">{log.actorUsername}</span>
+                      ID: {log.actorId || 'Hệ thống'} <br />
+                      <span className="text-slate-500">{log.actorEmail || '-'}</span>
                     </td>
-                    <td className="px-4 py-3 text-xs text-fuchsia-300">
-                      ID: {log.requestId}
+                    <td className="px-4 py-3 text-xs">
+                      <div className="font-semibold text-fuchsia-300">{log.requestNo || `ID: ${log.requestId}`}</div>
+                      <div className="text-slate-400 text-[11px] truncate max-w-[180px]" title={log.requestTitle}>{log.requestTitle || '-'}</div>
+                    </td>
+                    <td className="px-4 py-3 text-xs">
+                      {log.oldStatus || log.newStatus ? (
+                        <div className="flex items-center gap-1.5">
+                          {log.oldStatus ? (
+                            <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 font-mono">
+                              {log.oldStatus}
+                            </span>
+                          ) : (
+                            <span className="text-slate-500">-</span>
+                          )}
+                          <span className="text-slate-500">→</span>
+                          <span className="px-1.5 py-0.5 rounded bg-indigo-950 text-indigo-300 font-semibold font-mono">
+                            {log.newStatus}
+                          </span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-500">-</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-xs">
+                      {log.stepFrom !== null || log.stepTo !== null ? (
+                        <div className="flex items-center gap-1.5 font-mono">
+                          <span className="text-slate-400">{log.stepFrom !== null ? `Bước ${log.stepFrom}` : '-'}</span>
+                          <span className="text-slate-500">→</span>
+                          <span className="text-indigo-300 font-semibold">{log.stepTo !== null ? `Bước ${log.stepTo}` : '-'}</span>
+                        </div>
+                      ) : (
+                        <span className="text-slate-500">-</span>
+                      )}
                     </td>
                     <td className="px-4 py-3">
                       <div className="max-w-xs md:max-w-md max-h-24 overflow-y-auto bg-slate-950 p-2 rounded text-[10px] font-mono text-slate-400 border border-slate-800">

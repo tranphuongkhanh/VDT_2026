@@ -60,7 +60,7 @@ export default function LoginPage() {
           </div>
           <div>
             <p className="text-lg font-extrabold text-white leading-none">VDT 2026</p>
-            <p className="text-[11px] text-indigo-400 font-bold tracking-widest uppercase">Workflow Hub</p>
+            <p className="text-[11px] text-indigo-400 font-bold tracking-widest uppercase">Approval System</p>
           </div>
         </div>
 
@@ -80,7 +80,6 @@ export default function LoginPage() {
             {[
               '✓  Tạo và theo dõi yêu cầu dễ dàng',
               '✓  Quy trình phê duyệt nhiều bước linh hoạt',
-              '✓  Thông báo thời gian thực qua email',
             ].map((item) => (
               <p key={item} className="text-xs text-slate-400 font-medium">{item}</p>
             ))}
