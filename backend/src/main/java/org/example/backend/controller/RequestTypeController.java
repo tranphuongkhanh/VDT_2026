@@ -6,8 +6,10 @@ import org.example.backend.dto.request.CreateRequestTypeRequest;
 import org.example.backend.dto.request.UpdateRequestTypeRequest;
 import org.example.backend.dto.response.FormResponse;
 import org.example.backend.dto.response.RequestTypeResponse;
+import org.example.backend.dto.response.WorkflowResponse;
 import org.example.backend.service.FormService;
 import org.example.backend.service.RequestTypeService;
+import org.example.backend.service.WorkflowService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -25,10 +27,12 @@ public class RequestTypeController {
 
     private final RequestTypeService requestTypeService;
     private final FormService formService;
+    private final WorkflowService workflowService;
 
-    public RequestTypeController(RequestTypeService requestTypeService, FormService formService) {
+    public RequestTypeController(RequestTypeService requestTypeService, FormService formService, WorkflowService workflowService) {
         this.requestTypeService = requestTypeService;
         this.formService = formService;
+        this.workflowService = workflowService;
     }
 
     @GetMapping
@@ -89,6 +93,13 @@ public class RequestTypeController {
     public ResponseEntity<FormResponse> getActiveForm(@PathVariable Long id) {
         FormResponse activeForm = formService.getActiveFormByRequestTypeId(id);
         return ResponseEntity.ok(activeForm);
+    }
+
+    @GetMapping("/{id}/workflow")
+    @PreAuthorize("isAuthenticated()")
+    public ResponseEntity<WorkflowResponse> getActiveWorkflow(@PathVariable Long id) {
+        WorkflowResponse activeWorkflow = workflowService.getActiveWorkflowByRequestTypeId(id);
+        return ResponseEntity.ok(activeWorkflow);
     }
 
     @PostMapping("/{id}/forms")

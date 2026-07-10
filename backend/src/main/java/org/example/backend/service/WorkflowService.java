@@ -67,6 +67,17 @@ public class WorkflowService {
         return convertToWorkflowResponse(workflow);
     }
 
+    @Transactional(readOnly = true)
+    public WorkflowResponse getActiveWorkflowByRequestTypeId(Long requestTypeId) {
+        if (!requestTypeRepository.existsById(requestTypeId)) {
+            throw new ResourceNotFoundException("Request type not found with id: " + requestTypeId);
+        }
+        Workflow workflow = workflowRepository.findByRequestTypeIdAndIsActiveTrue(requestTypeId)
+                .orElseThrow(() -> new ResourceNotFoundException(
+                        "Active workflow not found for request type id: " + requestTypeId));
+        return convertToWorkflowResponse(workflow);
+    }
+
     @Transactional
     public WorkflowResponse createWorkflow(CreateWorkflowRequest request, String username) {
         RequestType requestType = requestTypeRepository.findById(request.getRequestTypeId())
